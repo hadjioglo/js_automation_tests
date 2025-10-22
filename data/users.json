@@ -1,0 +1,53 @@
+{
+  "adminUsers": [
+    {
+      "username": "admin",
+      "email": "admin@factory-direct.com",
+      "password": "admin123",
+      "role": "admin",
+      "permissions": ["read", "write", "delete", "manage_users"]
+    },
+    {
+      "username": "moderator",
+      "email": "moderator@factory-direct.com", 
+      "password": "mod123",
+      "role": "moderator",
+      "permissions": ["read", "write", "moderate_content"]
+    }
+  ],
+  "testUsers": [
+    {
+      "username": "testuser1",
+      "email": "testuser1@example.com",
+      "password": "test123",
+      "role": "factory",
+      "verified": true
+    },
+    {
+      "username": "testuser2", 
+      "email": "testuser2@example.com",
+      "password": "test123",
+      "role": "buyer",
+      "verified": true
+    },
+    {
+      "username": "unverified",
+      "email": "unverified@example.com", 
+      "password": "test123",
+      "role": "factory",
+      "verified": false
+    }
+  ],
+  "guestUsers": [
+    {
+      "email": "guest1@example.com",
+      "sessionId": "guest_session_1",
+      "permissions": ["read"]
+    },
+    {
+      "email": "guest2@example.com", 
+      "sessionId": "guest_session_2",
+      "permissions": ["read"]
+    }
+  ]
+}

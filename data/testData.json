@@ -1,0 +1,188 @@
+{
+  "testUsers": {
+    "factories": [
+      {
+        "name": "Premium Electronics Manufacturing",
+        "email": "contact@premiumelectronics.com",
+        "phone": "+86-138-0013-8000",
+        "accountType": "Factory",
+        "industry": "Electronics",
+        "productCategories": ["Consumer Electronics", "Industrial Equipment"],
+        "location": "Shenzhen, China",
+        "certifications": ["ISO 9001", "CE", "FCC"],
+        "establishedYear": 2005,
+        "employeeCount": 500
+      },
+      {
+        "name": "Global Textile Solutions",
+        "email": "factory@globaltextile.com",
+        "phone": "+91-22-4567-8901",
+        "accountType": "Factory",
+        "industry": "Textiles",
+        "productCategories": ["Clothing", "Home Textiles"],
+        "location": "Mumbai, India",
+        "certifications": ["OEKO-TEX", "GOTS"],
+        "establishedYear": 1998,
+        "employeeCount": 1200
+      },
+      {
+        "name": "Advanced Automotive Parts",
+        "email": "info@advancedauto.com",
+        "phone": "+49-89-1234-5678",
+        "accountType": "Factory",
+        "industry": "Automotive",
+        "productCategories": ["Engine Parts", "Electrical Components"],
+        "location": "Munich, Germany",
+        "certifications": ["ISO/TS 16949", "VDA 6.3"],
+        "establishedYear": 1985,
+        "employeeCount": 800
+      }
+    ],
+    "buyers": [
+      {
+        "name": "Global Retail Solutions",
+        "email": "procurement@globalretail.com",
+        "phone": "+1-555-RETAIL",
+        "accountType": "Buyer",
+        "businessType": "Retailer",
+        "targetProducts": ["Electronics", "Clothing"],
+        "location": "New York, USA",
+        "purchaseVolume": "High",
+        "preferredPaymentTerms": "30 days",
+        "targetMarkets": ["North America", "Europe"]
+      },
+      {
+        "name": "European Import Export Co",
+        "email": "buyers@euimport.com",
+        "phone": "+33-1-42-34-56-78",
+        "accountType": "Buyer",
+        "businessType": "Import/Export",
+        "targetProducts": ["Industrial Parts", "Raw Materials"],
+        "location": "Paris, France",
+        "purchaseVolume": "Medium",
+        "preferredPaymentTerms": "Letter of Credit",
+        "targetMarkets": ["Europe", "Africa"]
+      },
+      {
+        "name": "Pacific Wholesale Distribution",
+        "email": "orders@pacificwholesale.com",
+        "phone": "+61-2-9876-5432",
+        "accountType": "Buyer",
+        "businessType": "Wholesaler",
+        "targetProducts": ["Consumer Products", "Home Goods"],
+        "location": "Sydney, Australia",
+        "purchaseVolume": "High",
+        "preferredPaymentTerms": "45 days",
+        "targetMarkets": ["Australia", "New Zealand", "Asia-Pacific"]
+      }
+    ]
+  },
+  "productCategories": [
+    {
+      "id": 1,
+      "name": "Electronics",
+      "subcategories": [
+        "Consumer Electronics",
+        "Industrial Electronics",
+        "Components",
+        "Semiconductors"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Textiles",
+      "subcategories": [
+        "Clothing",
+        "Home Textiles",
+        "Technical Textiles",
+        "Raw Materials"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Automotive",
+      "subcategories": [
+        "Engine Parts",
+        "Electrical Components",
+        "Body Parts",
+        "Accessories"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Machinery",
+      "subcategories": [
+        "Industrial Machinery",
+        "Construction Equipment",
+        "Agricultural Machinery",
+        "Mining Equipment"
+      ]
+    }
+  ],
+  "industries": [
+    "Electronics",
+    "Textiles",
+    "Automotive",
+    "Food & Beverage",
+    "Pharmaceuticals",
+    "Machinery",
+    "Chemicals",
+    "Plastics",
+    "Metals",
+    "Construction Materials"
+  ],
+  "countries": [
+    {
+      "name": "China",
+      "code": "CN",
+      "phonePrefix": "+86",
+      "majorCities": ["Beijing", "Shanghai", "Shenzhen", "Guangzhou"]
+    },
+    {
+      "name": "India",
+      "code": "IN",
+      "phonePrefix": "+91",
+      "majorCities": ["Mumbai", "Delhi", "Bangalore", "Chennai"]
+    },
+    {
+      "name": "United States",
+      "code": "US",
+      "phonePrefix": "+1",
+      "majorCities": ["New York", "Los Angeles", "Chicago", "Houston"]
+    },
+    {
+      "name": "Germany",
+      "code": "DE",
+      "phonePrefix": "+49",
+      "majorCities": ["Berlin", "Munich", "Hamburg", "Frankfurt"]
+    },
+    {
+      "name": "United Kingdom",
+      "code": "GB",
+      "phonePrefix": "+44",
+      "majorCities": ["London", "Manchester", "Birmingham", "Leeds"]
+    }
+  ],
+  "businessTypes": [
+    "Manufacturer",
+    "Factory",
+    "Retailer",
+    "Wholesaler",
+    "Distributor",
+    "Import/Export",
+    "E-commerce",
+    "Trading Company"
+  ],
+  "certifications": [
+    "ISO 9001",
+    "ISO 14001",
+    "CE",
+    "FCC",
+    "RoHS",
+    "REACH",
+    "OEKO-TEX",
+    "GOTS",
+    "FDA",
+    "GMP"
+  ]
+}

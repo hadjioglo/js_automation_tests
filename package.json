@@ -1,0 +1,84 @@
+{
+  "name": "factory-direct-playwright-framework",
+  "version": "2.0.0",
+  "description": "Production-ready Playwright TypeScript framework for Factory Direct website testing",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:ui": "npx playwright test --ui",
+    "test:smoke": "npx playwright test --grep @smoke",
+    "test:regression": "npx playwright test --grep @regression",
+    "test:api": "npx playwright test --project api-tests",
+    "test:e2e": "npx playwright test tests/e2e",
+    "test:mobile": "npx playwright test --project mobile-chrome mobile-safari",
+    "test:desktop": "npx playwright test --project e2e-chromium e2e-firefox e2e-webkit",
+    "test:cross-browser": "npx playwright test --project e2e-chromium e2e-firefox e2e-webkit",
+    "test:parallel": "npx playwright test --workers=4",
+    "test:serial": "npx playwright test --workers=1",
+    "test:retry": "npx playwright test --retries=3",
+    "test:update-snapshots": "npx playwright test --update-snapshots",
+    "test:dev": "TEST_ENV=development npx playwright test",
+    "test:staging": "TEST_ENV=staging npx playwright test",
+    "test:prod": "TEST_ENV=production npx playwright test",
+    "report:allure": "npx allure generate reports/allure-results --clean -o reports/allure-report && npx allure open reports/allure-report",
+    "report:html": "npx playwright show-report",
+    "report:json": "cat reports/test-results.json | jq .",
+    "install:browsers": "npx playwright install",
+    "install:deps": "npx playwright install-deps",
+    "setup": "npm run install:browsers && npm run install:deps",
+    "lint": "eslint . --ext .ts --fix",
+    "lint:check": "eslint . --ext .ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf test-results reports/html reports/allure-results reports/allure-report node_modules/.cache",
+    "pretest": "npm run typecheck",
+    "posttest": "npm run report:html",
+    "ci:test": "CI=true npx playwright test --project smoke",
+    "ci:full": "CI=true npx playwright test",
+    "dev": "echo 'No dev server configured'",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "testing",
+    "e2e",
+    "api",
+    "automation",
+    "factory-direct",
+    "web-testing"
+  ],
+  "author": "QA Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@typescript-eslint/eslint-plugin": "^6.7.5",
+    "@typescript-eslint/parser": "^6.7.5",
+    "@types/node": "^20.10.5",
+    "dotenv": "^16.3.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-playwright": "^0.20.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "winston": "^3.11.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/factory-direct-tests.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/factory-direct-tests/issues"
+  },
+  "homepage": "https://github.com/your-org/factory-direct-tests#readme"
+}
