@@ -72,11 +72,9 @@ factoryDirect/
 
 ### Environment Setup
 
-The framework supports multiple environments through configuration files:
+The framework is configured for production environment:
 
-- **Development**: `config/dev.env` - Local development testing
-- **Staging**: `config/staging.env` - Pre-production testing
-- **Production**: `config/prod.env` - Production smoke testing
+- **Production**: `config/prod.env` - Production testing configuration
 
 ### Environment Variables
 
@@ -135,15 +133,9 @@ npm run test:api
 npm run test:e2e
 ```
 
-### Environment-Specific Testing
+### Production Testing
 
 ```powershell
-# Development environment
-npm run test:dev
-
-# Staging environment
-npm run test:staging
-
 # Production environment
 npm run test:prod
 ```

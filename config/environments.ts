@@ -1,3 +1,6 @@
+import { config } from 'dotenv';
+import path from 'path';
+
 export interface EnvironmentConfig {
   name: string;
   baseUrl: string;
@@ -15,125 +18,73 @@ export interface EnvironmentConfig {
   trace: 'off' | 'on' | 'retain-on-failure' | 'on-first-retry';
 }
 
-const commonConfig = {
-  timeout: 30000,
-  viewport: {
-    width: 1920,
-    height: 1080
-  },
-  video: 'retain-on-failure' as const,
-  screenshot: 'only-on-failure' as const,
-  trace: 'on-first-retry' as const
-};
+// Load environment variables from production config
+const envFile = path.join(process.cwd(), 'config', 'prod.env');
+config({ path: envFile });
 
+// Production environment configuration
 export const environments: Record<string, EnvironmentConfig> = {
-  development: {
-    name: 'development',
-    baseUrl: 'https://dev.factory-direct.tilda.ws',
-    apiBaseUrl: 'https://api-dev.factory-direct.com',
-    retries: 1,
-    headless: false,
-    slowMo: 100,
-    ...commonConfig
-  },
-  
-  staging: {
-    name: 'staging',
-    baseUrl: 'https://staging.factory-direct.tilda.ws',
-    apiBaseUrl: 'https://api-staging.factory-direct.com',
-    retries: 2,
-    headless: true,
-    slowMo: 0,
-    ...commonConfig
-  },
-  
   production: {
     name: 'production',
-    baseUrl: 'https://factory-direct.tilda.ws',
-    apiBaseUrl: 'https://api.factory-direct.com',
-    retries: 3,
-    headless: true,
-    slowMo: 0,
-    ...commonConfig,
-    video: 'off' as const,
-    screenshot: 'only-on-failure' as const
-  },
-  
-  local: {
-    name: 'local',
-    baseUrl: 'http://localhost:3000',
-    apiBaseUrl: 'http://localhost:8080/api',
-    retries: 0,
-    headless: false,
-    slowMo: 200,
-    ...commonConfig,
-    timeout: 10000,
-    video: 'on' as const,
-    screenshot: 'on' as const,
-    trace: 'on' as const
+    baseUrl: process.env.BASE_URL || 'https://factory-direct.tilda.ws/',
+    apiBaseUrl: process.env.API_BASE_URL || 'https://api.factory-direct.com/v1',
+    timeout: parseInt(process.env.TIMEOUT || '60000'),
+    retries: parseInt(process.env.RETRIES || '3'),
+    headless: process.env.HEADLESS === 'true',
+    slowMo: parseInt(process.env.SLOW_MO || '0'),
+    viewport: {
+      width: parseInt(process.env.VIEWPORT_WIDTH || '1920'),
+      height: parseInt(process.env.VIEWPORT_HEIGHT || '1080')
+    },
+    video: (process.env.VIDEO_MODE as any) || 'off',
+    screenshot: (process.env.SCREENSHOT_MODE as any) || 'only-on-failure',
+    trace: (process.env.TRACE_MODE as any) || 'off'
   }
 };
 
 export function getEnvironmentConfig(envName?: string): EnvironmentConfig {
-  const env = envName || process.env.TEST_ENV || process.env.NODE_ENV || 'development';
+  const env = envName || process.env.ENV || 'production';
   
   if (!environments[env]) {
-    console.warn(`Environment "${env}" not found, using development as fallback`);
-    return environments.development;
+    console.warn(`Environment "${env}" not found. Using production configuration.`);
+    return environments.production;
   }
   
   return environments[env];
 }
 
-export function getEnvironmentVariables() {
-  return {
-    TEST_ENV: process.env.TEST_ENV || 'development',
-    NODE_ENV: process.env.NODE_ENV || 'development',
-    CI: process.env.CI === 'true',
-    DEBUG: process.env.DEBUG === 'true',
-    HEADLESS: process.env.HEADLESS === 'true',
-    API_TOKEN: process.env.API_TOKEN || '',
-    API_BASE_URL: process.env.API_BASE_URL || '',
-    BASE_URL: process.env.BASE_URL || '',
-    BROWSER: process.env.BROWSER || 'chromium',
-    WORKERS: parseInt(process.env.WORKERS || '1'),
-    RETRIES: parseInt(process.env.RETRIES || '2'),
-    TIMEOUT: parseInt(process.env.TIMEOUT || '30000')
-  };
-}
-
-export const testTags = {
-  smoke: '@smoke',
-  regression: '@regression',
-  api: '@api',
-  e2e: '@e2e',
-  critical: '@critical',
-  slow: '@slow',
-  flaky: '@flaky'
-};
-
-export const browsers = {
-  chromium: 'chromium',
-  firefox: 'firefox',
-  webkit: 'webkit',
-  edge: 'msedge',
-  chrome: 'chrome'
-};
-
-export const devices = {
-  mobile: {
-    name: 'Mobile',
-    viewport: { width: 375, height: 667 },
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15'
-  },
-  tablet: {
-    name: 'Tablet',
-    viewport: { width: 768, height: 1024 },
-    userAgent: 'Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15'
-  },
-  desktop: {
-    name: 'Desktop',
-    viewport: { width: 1920, height: 1080 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-  }
+// Environment variables helper
+export const envVars = {
+  // Core settings
+  ENV: process.env.ENV || 'production',
+  BASE_URL: process.env.BASE_URL || 'https://factory-direct.tilda.ws/',
+  API_BASE_URL: process.env.API_BASE_URL || 'https://api.factory-direct.com/v1',
+  
+  // Test execution
+  CI: process.env.CI === 'true',
+  HEADLESS: process.env.HEADLESS === 'true',
+  WORKERS: parseInt(process.env.PARALLEL_WORKERS || '4'),
+  RETRIES: parseInt(process.env.RETRIES || '3'),
+  TIMEOUT: parseInt(process.env.TIMEOUT || '60000'),
+  
+  // Authentication
+  API_TOKEN: process.env.API_TOKEN,
+  DEFAULT_USER_EMAIL: process.env.DEFAULT_USER_EMAIL || 'test@factory-direct.com',
+  DEFAULT_USER_PASSWORD: process.env.DEFAULT_USER_PASSWORD || 'TestPassword123!',
+  
+  // Feature flags
+  ENABLE_API_TESTS: process.env.ENABLE_API_TESTS === 'true',
+  ENABLE_VISUAL_TESTS: process.env.ENABLE_VISUAL_TESTS === 'true',
+  ENABLE_PERFORMANCE_TESTS: process.env.ENABLE_PERFORMANCE_TESTS === 'true',
+  ENABLE_ACCESSIBILITY_TESTS: process.env.ENABLE_ACCESSIBILITY_TESTS === 'true',
+  
+  // Reporting
+  SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
+  ENABLE_SLACK_NOTIFICATIONS: process.env.ENABLE_SLACK_NOTIFICATIONS === 'true',
+  ENABLE_EMAIL_REPORTS: process.env.ENABLE_EMAIL_REPORTS === 'true',
+  
+  // Logging
+  LOG_LEVEL: process.env.LOG_LEVEL || 'warn',
+  LOG_TO_FILE: process.env.LOG_TO_FILE === 'true',
+  LOG_FILE: process.env.LOG_FILE || 'logs/test-production.log'
 };
