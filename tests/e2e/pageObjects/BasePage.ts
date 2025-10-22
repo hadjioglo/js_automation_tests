@@ -13,20 +13,21 @@ export abstract class BasePage {
   }
 
   // Navigation methods
-  async goto(url: string, options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' }): Promise<void> {
+  async goto(url: string, options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle', timeout?: number }): Promise<void> {
     const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}${url}`;
     this.logger.info(`Navigating to: ${fullUrl}`);
-    await this.page.goto(fullUrl, { waitUntil: 'networkidle', ...options });
+    const defaultOptions = { waitUntil: 'domcontentloaded' as const, timeout: 60000 };
+    await this.page.goto(fullUrl, { ...defaultOptions, ...options });
   }
 
   async reload(): Promise<void> {
     this.logger.info('Reloading page');
-    await this.page.reload({ waitUntil: 'networkidle' });
+    await this.page.reload({ waitUntil: 'domcontentloaded' });
   }
 
   async goBack(): Promise<void> {
     this.logger.info('Going back');
-    await this.page.goBack({ waitUntil: 'networkidle' });
+    await this.page.goBack({ waitUntil: 'domcontentloaded' });
   }
 
   // Wait methods

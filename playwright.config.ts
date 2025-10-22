@@ -1,9 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
-import { getEnvironmentConfig, getEnvironmentVariables } from './config/environments';
+import { getEnvironmentConfig, envVars } from './config/environments';
 
-// Load environment variables
-const envVars = getEnvironmentVariables();
-const envConfig = getEnvironmentConfig(envVars.TEST_ENV);
+// Load environment variables and configuration
+const envConfig = getEnvironmentConfig(envVars.ENV);
 
 export default defineConfig({
   // Test discovery
