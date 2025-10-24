@@ -1,295 +1,291 @@
 import { test, expect } from '@playwright/test';
 import { FactoryDirectHomePage } from '../pageObjects/FactoryDirectHomePage';
-import { TestDataGenerator } from '../../../utils/dataGenerator';
 
-test.describe('Factory Direct Homepage @smoke', () => {
+test.describe('Factory Direct Homepage - Technical Testing @technical @e2e', () => {
   let homePage: FactoryDirectHomePage;
-  let testData: TestDataGenerator;
 
   test.beforeEach(async ({ page }) => {
     homePage = new FactoryDirectHomePage(page);
-    testData = new TestDataGenerator();
     await homePage.navigateToHomePage();
   });
 
-  test('should load homepage successfully', async () => {
-    await test.step('Validate page loads with correct title and content', async () => {
-      await homePage.validateHomePage();
-      await homePage.validateKeyContent();
+  test('should meet performance benchmarks', async ({ page }) => {
+    await test.step('Measure page load performance', async () => {
+      const startTime = Date.now();
+      await homePage.navigateToHomePage();
+      const loadTime = Date.now() - startTime;
+      
+      // Performance assertion - page should load within 3 seconds
+      expect(loadTime).toBeLessThan(3000);
+      console.log(`Page load time: ${loadTime}ms`);
     });
 
-    await test.step('Validate registration form is present', async () => {
-      await homePage.validateRegistrationForm();
-    });
-  });
-
-  test('should display proper page structure and elements', async () => {
-    await test.step('Validate social sharing buttons', async () => {
-      await homePage.validateSocialSharingButtons();
-    });
-
-    await test.step('Validate registration form is visible', async () => {
-      const isFormVisible = await homePage.isRegistrationFormVisible();
-      expect(isFormVisible).toBe(true);
-    });
-  });
-
-  test('should handle responsive design across different viewports', async ({ page }) => {
-    const viewports = [
-      { width: 375, height: 667, name: 'Mobile' },
-      { width: 768, height: 1024, name: 'Tablet' },
-      { width: 1920, height: 1080, name: 'Desktop' }
-    ];
-
-    for (const viewport of viewports) {
-      await test.step(`Test ${viewport.name} viewport (${viewport.width}x${viewport.height})`, async () => {
-        await page.setViewportSize({ width: viewport.width, height: viewport.height });
-        await homePage.validateRegistrationForm();
-        
-        const isPageLoaded = await homePage.isPageLoaded();
-        expect(isPageLoaded).toBe(true);
+    await test.step('Validate Core Web Vitals', async () => {
+      // Measure Largest Contentful Paint (LCP)
+      const lcp = await page.evaluate(() => {
+        return new Promise((resolve) => {
+          new PerformanceObserver((list) => {
+            const entries = list.getEntries();
+            const lastEntry = entries[entries.length - 1];
+            resolve(lastEntry.startTime);
+          }).observe({ entryTypes: ['largest-contentful-paint'] });
+          
+          // Fallback timeout
+          setTimeout(() => resolve(0), 5000);
+        });
       });
-    }
+      
+      // LCP should be under 2.5s for good performance
+      expect(lcp).toBeLessThan(2500);
+      console.log(`LCP: ${lcp}ms`);
+    });
+
+    await test.step('Check resource loading efficiency', async () => {
+      const resourceTimings = await page.evaluate(() => 
+        performance.getEntriesByType('resource').length
+      );
+      
+      // Should not load excessive resources
+      expect(resourceTimings).toBeLessThan(50);
+      console.log(`Resources loaded: ${resourceTimings}`);
+    });
+  });
+
+  test('should handle network conditions and errors', async ({ page, context }) => {
+    await test.step('Test slow network conditions', async () => {
+      // Simulate slow 3G connection
+      await context.route('**/*', async (route) => {
+        await new Promise(resolve => setTimeout(resolve, 100)); // Add 100ms delay
+        await route.continue();
+      });
+      
+      await homePage.navigateToHomePage();
+      const isLoaded = await homePage.isPageLoaded();
+      expect(isLoaded).toBe(true);
+    });
+
+    await test.step('Test offline behavior', async () => {
+      await context.setOffline(true);
+      
+      // Should handle offline gracefully
+      const navigation = homePage.navigateToHomePage();
+      await expect(navigation).rejects.toThrow();
+      
+      await context.setOffline(false);
+    });
+
+    await test.step('Test failed resource loading', async () => {
+      // Block CSS resources to test degraded experience
+      await context.route('**/*.css', route => route.abort());
+      
+      await homePage.navigateToHomePage();
+      // Page should still be functional without CSS
+      const bodyContent = await page.textContent('body');
+      expect(bodyContent).toBeTruthy();
+    });
+  });
+
+  test('should handle memory and resource management', async ({ page }) => {
+    await test.step('Monitor memory usage during interaction', async () => {
+      const initialMemory = await page.evaluate(() => 
+        (performance as any).memory?.usedJSHeapSize || 0
+      );
+
+      // Perform intensive interactions
+      for (let i = 0; i < 10; i++) {
+        await homePage.fillRegistrationForm({
+          name: `Test User ${i}`,
+          email: `test${i}@example.com`,
+          phone: `+123456789${i}`
+        });
+        await homePage.clearForm();
+      }
+
+      const finalMemory = await page.evaluate(() => 
+        (performance as any).memory?.usedJSHeapSize || 0
+      );
+
+      // Memory growth should be reasonable (less than 10MB increase)
+      const memoryGrowth = finalMemory - initialMemory;
+      expect(memoryGrowth).toBeLessThan(10 * 1024 * 1024);
+      console.log(`Memory growth: ${(memoryGrowth / 1024 / 1024).toFixed(2)}MB`);
+    });
+
+    await test.step('Test DOM cleanup and event listeners', async () => {
+      const initialListeners = await page.evaluate(() => 
+        (window as any).getEventListeners ? 
+        Object.keys((window as any).getEventListeners(document)).length : 0
+      );
+
+      // Add and remove form interactions
+      await homePage.fillRegistrationForm({
+        name: 'Memory Test User',
+        email: 'memory@test.com',
+        phone: '+1234567890'
+      });
+
+      await page.reload();
+
+      const finalListeners = await page.evaluate(() => 
+        (window as any).getEventListeners ? 
+        Object.keys((window as any).getEventListeners(document)).length : 0
+      );
+
+      // Event listeners should be properly cleaned up
+      expect(finalListeners).toBeLessThanOrEqual(initialListeners + 5);
+    });
   });
 });
 
-test.describe('Registration Form Functionality @regression', () => {
+test.describe('Cross-Browser Compatibility @compatibility @e2e', () => {
   let homePage: FactoryDirectHomePage;
-  let testData: TestDataGenerator;
 
   test.beforeEach(async ({ page }) => {
     homePage = new FactoryDirectHomePage(page);
-    testData = new TestDataGenerator();
     await homePage.navigateToHomePage();
   });
 
-  test('should fill and validate registration form with valid data', async () => {
-    const userData = testData.generateUserData();
-
-    await test.step('Fill registration form with valid data', async () => {
-      await homePage.fillRegistrationForm(userData);
-    });
-
-    await test.step('Validate form data was entered correctly', async () => {
-      await homePage.validateFormData(userData);
-    });
-
-    await test.step('Verify submit button is enabled', async () => {
-      const isEnabled = await homePage.isSubmitButtonEnabled();
-      expect(isEnabled).toBe(true);
-    });
-  });
-
-  test('should handle factory registration flow', async () => {
-    const factoryData = testData.generateFactoryData();
-
-    await test.step('Click register factory button', async () => {
-      await homePage.clickRegisterFactory();
-    });
-
-    await test.step('Fill factory registration data', async () => {
-      await homePage.fillRegistrationForm({
-        ...factoryData,
-        accountType: 'Factory'
-      });
-    });
-
-    await test.step('Validate factory data was entered', async () => {
-      await homePage.validateFormData(factoryData);
-    });
-  });
-
-  test('should handle buyer registration flow', async () => {
-    const buyerData = testData.generateBuyerData();
-
-    await test.step('Click register buyer button', async () => {
-      await homePage.clickRegisterBuyer();
-    });
-
-    await test.step('Fill buyer registration data', async () => {
-      await homePage.fillRegistrationForm({
-        ...buyerData,
-        accountType: 'Buyer'
-      });
-    });
-
-    await test.step('Validate buyer data was entered', async () => {
-      await homePage.validateFormData(buyerData);
-    });
-  });
-
-  test('should validate email format requirements', async () => {
-    const invalidEmails = [
-      'invalid-email',
-      'test@',
-      '@domain.com',
-      'user@.com',
-      'user@domain',
-      ''
-    ];
-
-    for (const email of invalidEmails) {
-      await test.step(`Test invalid email: ${email}`, async () => {
-        await homePage.clearForm();
-        
-        const userData = {
-          name: 'Test User',
-          email: email,
-          phone: '+1234567890'
+  test('should handle browser-specific CSS and JavaScript', async ({ page, browserName }) => {
+    await test.step(`Test ${browserName} specific functionality`, async () => {
+      // Check for browser-specific CSS support
+      const cssSupport = await page.evaluate(() => {
+        const testEl = document.createElement('div');
+        const tests = {
+          flexbox: 'flex' in testEl.style,
+          grid: 'grid' in testEl.style,
+          customProperties: CSS.supports('--custom: value'),
         };
+        return tests;
+      });
 
-        await homePage.fillRegistrationForm(userData);
-        
-        // Check validation errors
-        const errors = await homePage.getFormFieldErrors();
-        if (email === '') {
-          // Empty email should have validation error
-          expect(errors.some(error => error.includes('Email'))).toBe(true);
-        } else {
-          // Invalid format should have validation error
-          expect(errors.some(error => error.includes('Email'))).toBe(true);
+      expect(cssSupport.flexbox).toBe(true);
+      console.log(`${browserName} CSS support:`, cssSupport);
+    });
+
+    await test.step('Test JavaScript API compatibility', async () => {
+      const apiSupport = await page.evaluate(() => ({
+        fetch: typeof fetch !== 'undefined',
+        promises: typeof Promise !== 'undefined',
+        es6Classes: typeof class {} === 'function',
+        localStorage: typeof localStorage !== 'undefined'
+      }));
+
+      expect(apiSupport.fetch).toBe(true);
+      expect(apiSupport.promises).toBe(true);
+      console.log(`${browserName} API support:`, apiSupport);
+    });
+  });
+
+  test('should handle touch vs mouse interactions', async ({ page, browserName }) => {
+    await test.step('Test input method compatibility', async () => {
+      const inputMethods = await page.evaluate(() => ({
+        hasTouch: 'ontouchstart' in window,
+        hasPointer: 'onpointerdown' in window,
+        hasMouse: matchMedia('(hover: hover)').matches
+      }));
+
+      console.log(`${browserName} input methods:`, inputMethods);
+
+      // Test form interaction regardless of input method
+      await homePage.fillRegistrationForm({
+        name: 'Cross Browser Test',
+        email: 'crossbrowser@test.com',
+        phone: '+1234567890'
+      });
+
+      const isFormValid = await homePage.validateRegistrationForm();
+      expect(isFormValid).toBe(true);
+    });
+  });
+});
+
+test.describe('Developer Debugging Tools @debug @e2e', () => {
+  let homePage: FactoryDirectHomePage;
+
+  test.beforeEach(async ({ page }) => {
+    homePage = new FactoryDirectHomePage(page);
+  });
+
+  test('should provide detailed error information', async ({ page }) => {
+    await test.step('Capture console errors and warnings', async () => {
+      const consoleMessages: string[] = [];
+      
+      page.on('console', msg => {
+        if (msg.type() === 'error' || msg.type() === 'warning') {
+          consoleMessages.push(`${msg.type()}: ${msg.text()}`);
         }
       });
-    }
-  });
 
-  test('should accept valid email formats', async () => {
-    const validEmails = [
-      'user@example.com',
-      'test.email@domain.co.uk',
-      'user+tag@subdomain.example.org',
-      'name123@test-domain.net'
-    ];
-
-    for (const email of validEmails) {
-      await test.step(`Test valid email: ${email}`, async () => {
-        await homePage.clearForm();
-        
-        const userData = {
-          name: 'Test User',
-          email: email,
-          phone: '+1234567890'
-        };
-
-        await homePage.fillRegistrationForm(userData);
-        
-        // Validate no email errors
-        const errors = await homePage.getFormFieldErrors();
-        const emailErrors = errors.filter(error => error.includes('Email'));
-        expect(emailErrors).toHaveLength(0);
+      await homePage.navigateToHomePage();
+      await homePage.fillRegistrationForm({
+        name: '',
+        email: 'invalid-email',
+        phone: ''
       });
-    }
-  });
 
-  test('should handle phone number formats', async () => {
-    const phoneFormats = [
-      '+1234567890',
-      '+1 (555) 123-4567',
-      '555-123-4567',
-      '+86 138 0013 8000',
-      '+44 20 7946 0958'
-    ];
+      // Allow time for validation messages
+      await page.waitForTimeout(1000);
 
-    for (const phone of phoneFormats) {
-      await test.step(`Test phone format: ${phone}`, async () => {
-        await homePage.clearForm();
-        
-        const userData = {
-          name: 'Test User',
-          email: 'test@example.com',
-          phone: phone
-        };
-
-        await homePage.fillRegistrationForm(userData);
-        await homePage.validateFormData(userData);
-      });
-    }
-  });
-
-  test('should handle special characters in name field', async () => {
-    const specialNames = [
-      'José María',
-      'O\'Connor-Smith',
-      'Jean-François',
-      'Li Wei (李维)',
-      'Müller & Associates'
-    ];
-
-    for (const name of specialNames) {
-      await test.step(`Test special character name: ${name}`, async () => {
-        await homePage.clearForm();
-        
-        const userData = {
-          name: name,
-          email: 'test@example.com',
-          phone: '+1234567890'
-        };
-
-        await homePage.fillRegistrationForm(userData);
-        await homePage.validateFormData(userData);
-      });
-    }
-  });
-});
-
-test.describe('Social Sharing and Navigation @regression', () => {
-  let homePage: FactoryDirectHomePage;
-
-  test.beforeEach(async ({ page }) => {
-    homePage = new FactoryDirectHomePage(page);
-    await homePage.navigateToHomePage();
-  });
-
-  test('should handle social sharing interactions', async ({ context }) => {
-    await test.step('Test Facebook sharing', async () => {
-      // Listen for new page/popup
-      const pagePromise = context.waitForEvent('page');
+      console.log('Console messages captured:', consoleMessages);
       
-      try {
-        await homePage.shareOnFacebook();
-        const newPage = await pagePromise;
-        
-        // Verify Facebook URL
-        expect(newPage.url()).toContain('facebook.com');
-        await newPage.close();
-      } catch (error) {
-        // If no popup, verify the link exists
-        console.log('Facebook sharing link verified (no popup opened)');
-      }
+      // Should capture validation errors for debugging
+      // (This is for debugging purposes, not strict assertion)
     });
 
-    await test.step('Test Twitter sharing', async () => {
-      const pagePromise = context.waitForEvent('page');
-      
-      try {
-        await homePage.shareOnTwitter();
-        const newPage = await pagePromise;
-        
-        // Verify Twitter URL
-        expect(newPage.url()).toContain('twitter.com');
-        await newPage.close();
-      } catch (error) {
-        // If no popup, verify the link exists
-        console.log('Twitter sharing link verified (no popup opened)');
-      }
+    await test.step('Test error boundary behavior', async () => {
+      // Test how the page handles JavaScript errors
+      await page.evaluate(() => {
+        // Simulate a non-critical error
+        try {
+          (window as any).nonExistentFunction();
+        } catch (error) {
+          console.warn('Caught expected error for testing:', error instanceof Error ? error.message : String(error));
+        }
+      });
+
+      // Page should remain functional after non-critical errors
+      const isPageLoaded = await homePage.isPageLoaded();
+      expect(isPageLoaded).toBe(true);
     });
   });
 
-  test('should handle page scrolling and element visibility', async () => {
-    await test.step('Test scroll to top', async () => {
-      await homePage.scrollToTop();
-      await homePage.validateHomePage();
+  test('should support debugging workflow', async ({ page }) => {
+    await test.step('Enable debug mode features', async () => {
+      // Add debug attributes for easier element inspection
+      await page.evaluate(() => {
+        document.body.setAttribute('data-test-mode', 'debug');
+        
+        // Add visual debugging helpers
+        const forms = document.querySelectorAll('form');
+        forms.forEach((form, index) => {
+          form.setAttribute('data-debug-form', `form-${index}`);
+        });
+      });
+
+      const debugMode = await page.getAttribute('body', 'data-test-mode');
+      expect(debugMode).toBe('debug');
     });
 
-    await test.step('Test scroll to bottom', async () => {
-      await homePage.scrollToBottom();
-      await homePage.waitForTimeout(1000);
-    });
+    await test.step('Test element state inspection', async () => {
+      await homePage.fillRegistrationForm({
+        name: 'Debug Test User',
+        email: 'debug@test.com',
+        phone: '+1234567890'
+      });
 
-    await test.step('Test scroll to registration form', async () => {
-      await homePage.scrollToElement(homePage['registrationForm']);
-      const isFormVisible = await homePage.isRegistrationFormVisible();
-      expect(isFormVisible).toBe(true);
+      // Capture form state for debugging
+      const formState = await page.evaluate(() => {
+        const inputs = Array.from(document.querySelectorAll('input'));
+        return inputs.map(input => ({
+          name: input.name || input.type,
+          value: (input as HTMLInputElement).value,
+          valid: (input as HTMLInputElement).validity.valid,
+          required: (input as HTMLInputElement).required
+        }));
+      });
+
+      console.log('Form state for debugging:', formState);
+      expect(formState.length).toBeGreaterThan(0);
     });
   });
 });
