@@ -1,0 +1,298 @@
+# Factory Direct - Cross-Browser Test Automation Pipeline
+# Runs automated tests across multiple browsers and operating systems
+# with test sharding, reporting, and Teams notifications
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+  paths:
+    exclude:
+      - README.md
+      - docs/*
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - README.md
+      - docs/*
+
+variables:
+  - name: nodeVersion
+    value: '18.x'
+  - name: testResultsPath
+    value: 'test-results'
+  - name: screenshotsPath
+    value: 'test-results/screenshots'
+  - name: reportsPath
+    value: 'reports'
+  - name: shardCount
+    value: 4
+
+parameters:
+  - name: runE2ETests
+    displayName: 'Run E2E Tests'
+    type: boolean
+    default: true
+  - name: runApiTests
+    displayName: 'Run API Tests'
+    type: boolean
+    default: true
+  - name: browsers
+    displayName: 'Browsers to Test'
+    type: object
+    default:
+      - chrome
+      - firefox
+      - edge
+
+stages:
+  - stage: Build
+    displayName: 'Build and Setup'
+    jobs:
+      - job: BuildJob
+        displayName: 'Build Application'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: '$(nodeVersion)'
+
+          - task: Cache@2
+            displayName: 'Cache node_modules'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+                npm
+              path: '$(System.DefaultWorkingDirectory)/node_modules'
+
+          - script: |
+              npm ci
+              npm run build --if-present
+            displayName: 'Install dependencies and build'
+            env:
+              NODE_ENV: test
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish build artifacts'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)'
+              artifact: 'build-output'
+              publishLocation: 'pipeline'
+
+  - stage: TestWindows
+    displayName: 'Windows Cross-Browser Testing'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - ${{ each browser in parameters.browsers }}:
+        - ${{ if or(ne(browser, 'edge'), eq(variables['Agent.OS'], 'Windows_NT')) }}:
+          - job: Test_Windows_${{ browser }}
+            displayName: 'Windows - ${{ upper(browser) }} Tests'
+            pool:
+              vmImage: 'windows-latest'
+            strategy:
+              matrix:
+                ${{ each shard in range(1, variables.shardCount) }}:
+                  Shard_${{ shard }}:
+                    shardIndex: ${{ shard }}
+                    shardTotal: $(shardCount)
+            timeoutInMinutes: 30
+            steps:
+              - template: templates/test-setup.yml
+                parameters:
+                  browser: ${{ browser }}
+                  platform: 'windows'
+
+              - ${{ if parameters.runE2ETests }}:
+                - script: |
+                    npx playwright test --project=${{ browser }} --shard=$(shardIndex)/$(shardTotal) --reporter=junit,html
+                  displayName: 'Run E2E Tests - ${{ upper(browser) }} (Shard $(shardIndex))'
+                  env:
+                    BROWSER: ${{ browser }}
+                    CI: true
+                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}-shard-$(shardIndex).xml'
+                  continueOnError: true
+
+              - ${{ if parameters.runApiTests }}:
+                - script: |
+                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}-shard-$(shardIndex).xml
+                  displayName: 'Run API Tests - Shard $(shardIndex)'
+                  env:
+                    CI: true
+                  continueOnError: true
+
+              - template: templates/test-results.yml
+                parameters:
+                  browser: ${{ browser }}
+                  platform: 'windows'
+                  shardIndex: '$(shardIndex)'
+
+  - stage: TestLinux
+    displayName: 'Linux Cross-Browser Testing'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - ${{ each browser in parameters.browsers }}:
+        - ${{ if ne(browser, 'edge') }}:
+          - job: Test_Linux_${{ browser }}
+            displayName: 'Linux - ${{ upper(browser) }} Tests'
+            pool:
+              vmImage: 'ubuntu-latest'
+            strategy:
+              matrix:
+                ${{ each shard in range(1, variables.shardCount) }}:
+                  Shard_${{ shard }}:
+                    shardIndex: ${{ shard }}
+                    shardTotal: $(shardCount)
+            timeoutInMinutes: 30
+            steps:
+              - template: templates/test-setup.yml
+                parameters:
+                  browser: ${{ browser }}
+                  platform: 'linux'
+
+              - ${{ if parameters.runE2ETests }}:
+                - script: |
+                    xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test --project=${{ browser }} --shard=$(shardIndex)/$(shardTotal) --reporter=junit,html
+                  displayName: 'Run E2E Tests - ${{ upper(browser) }} (Shard $(shardIndex))'
+                  env:
+                    BROWSER: ${{ browser }}
+                    CI: true
+                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}-shard-$(shardIndex).xml'
+                  continueOnError: true
+
+              - ${{ if parameters.runApiTests }}:
+                - script: |
+                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}-shard-$(shardIndex).xml
+                  displayName: 'Run API Tests - Shard $(shardIndex)'
+                  env:
+                    CI: true
+                  continueOnError: true
+
+              - template: templates/test-results.yml
+                parameters:
+                  browser: ${{ browser }}
+                  platform: 'linux'
+                  shardIndex: '$(shardIndex)'
+
+  - stage: Reporting
+    displayName: 'Test Reporting and Notifications'
+    dependsOn: 
+      - TestWindows
+      - TestLinux
+    condition: always()
+    jobs:
+      - job: PublishResults
+        displayName: 'Publish Test Results'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download all test artifacts'
+            inputs:
+              buildType: 'current'
+              itemPattern: '**'
+              targetPath: '$(System.DefaultWorkingDirectory)/artifacts'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit-*.xml'
+              searchFolder: '$(System.DefaultWorkingDirectory)/artifacts'
+              mergeTestResults: true
+              failTaskOnFailedTests: false
+              testRunTitle: 'Cross-Browser Test Results'
+              publishRunAttachments: true
+            condition: always()
+
+          - task: PublishHtmlReport@1
+            displayName: 'Publish HTML Report'
+            inputs:
+              reportDir: '$(System.DefaultWorkingDirectory)/artifacts/**/html'
+              tabName: 'Test Report'
+            condition: always()
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Screenshots'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/artifacts/**/screenshots'
+              artifact: 'test-screenshots'
+              publishLocation: 'pipeline'
+            condition: always()
+
+      - job: NotifyEmail
+        displayName: 'Send Email Notification'
+        dependsOn: PublishResults
+        condition: failed()
+        pool:
+          vmImage: 'ubuntu-latest'
+        variables:
+          testResults: $[ dependencies.PublishResults.outputs['testResults.outcome'] ]
+        steps:
+          - task: SendEmail@1
+            displayName: 'Send Email Notification on Failure'
+            inputs:
+              To: 'alexandr.hadjioglo@amdaris.com'
+              From: '$(Build.RequestedForEmail)'
+              Subject: '❌ Factory Direct Tests Failed - Build $(Build.BuildNumber)'
+              Body: |
+                <html>
+                <body style="font-family: Arial, sans-serif; margin: 20px;">
+                  <h2 style="color: #d73a49;">❌ Test Automation Failed</h2>
+                  
+                  <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #d73a49; margin: 20px 0;">
+                    <h3>Build Information</h3>
+                    <ul style="list-style-type: none; padding: 0;">
+                      <li><strong>Repository:</strong> $(Build.Repository.Name)</li>
+                      <li><strong>Branch:</strong> $(Build.SourceBranchName)</li>
+                      <li><strong>Commit:</strong> $(Build.SourceVersion)</li>
+                      <li><strong>Build Number:</strong> $(Build.BuildNumber)</li>
+                      <li><strong>Triggered By:</strong> $(Build.RequestedFor)</li>
+                      <li><strong>Build Time:</strong> $(System.DateTime)</li>
+                    </ul>
+                  </div>
+                  
+                  <div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                    <h3>Test Results Summary</h3>
+                    <p>One or more test suites have failed during cross-browser testing.</p>
+                    <p>Please review the test results and take appropriate action.</p>
+                  </div>
+                  
+                  <div style="margin: 30px 0;">
+                    <h3>Quick Actions</h3>
+                    <p>
+                      <a href="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)" 
+                         style="background-color: #0366d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
+                        📊 View Build Results
+                      </a>
+                      
+                      <a href="$(Build.Repository.Uri)" 
+                         style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                        📂 View Repository
+                      </a>
+                    </p>
+                  </div>
+                  
+                  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e4e8; color: #586069; font-size: 12px;">
+                    <p>This email was automatically generated by Azure Pipelines for the Factory Direct test automation pipeline.</p>
+                    <p>Build URL: <a href="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)">$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)</a></p>
+                  </div>
+                </body>
+                </html>
+              BodyAsHtml: true
+              SmtpServer: '$(SMTP_SERVER)'
+              SmtpUsername: '$(SMTP_USERNAME)'
+              SmtpPassword: '$(SMTP_PASSWORD)'
+              EnableSsl: true
+            continueOnError: true

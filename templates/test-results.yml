@@ -1,0 +1,99 @@
+# Test Results Template
+# Reusable template for collecting and publishing test results and artifacts
+
+parameters:
+  - name: browser
+    type: string
+  - name: platform
+    type: string
+  - name: shardIndex
+    type: string
+
+steps:
+  - task: PublishTestResults@2
+    displayName: 'Publish ${{ upper(parameters.browser) }} Test Results (Shard ${{ parameters.shardIndex }})'
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'test-results/junit-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}.xml'
+      failTaskOnFailedTests: false
+      testRunTitle: '${{ upper(parameters.platform) }} - ${{ upper(parameters.browser) }} Tests (Shard ${{ parameters.shardIndex }})'
+      publishRunAttachments: true
+    condition: always()
+
+  - task: PublishTestResults@2
+    displayName: 'Publish API Test Results (Shard ${{ parameters.shardIndex }})'
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'test-results/junit-api-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}.xml'
+      failTaskOnFailedTests: false
+      testRunTitle: 'API Tests - ${{ upper(parameters.browser) }} (Shard ${{ parameters.shardIndex }})'
+      publishRunAttachments: true
+    condition: always()
+
+  - script: |
+      echo "Collecting test artifacts for ${{ parameters.browser }} on ${{ parameters.platform }}"
+      find test-results -name "*.xml" -o -name "*.json" -o -name "*.html" | head -20
+      find test-results -name "*.png" -o -name "*.jpg" | wc -l
+    displayName: 'List test artifacts'
+    condition: eq(variables['Agent.OS'], 'Linux')
+
+  - powershell: |
+      Write-Host "Collecting test artifacts for ${{ parameters.browser }} on ${{ parameters.platform }}"
+      Get-ChildItem -Path "test-results" -Recurse -Include "*.xml", "*.json", "*.html" | Select-Object -First 20 | ForEach-Object { Write-Host $_.FullName }
+      $screenshotCount = (Get-ChildItem -Path "test-results" -Recurse -Include "*.png", "*.jpg").Count
+      Write-Host "Screenshots found: $screenshotCount"
+    displayName: 'List test artifacts'
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish ${{ upper(parameters.browser) }} Test Results'
+    inputs:
+      targetPath: 'test-results'
+      artifact: 'test-results-${{ parameters.platform }}-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}'
+      publishLocation: 'pipeline'
+    condition: always()
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish ${{ upper(parameters.browser) }} Screenshots'
+    inputs:
+      targetPath: 'test-results/screenshots'
+      artifact: 'screenshots-${{ parameters.platform }}-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}'
+      publishLocation: 'pipeline'
+    condition: always()
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish HTML Reports'
+    inputs:
+      targetPath: 'playwright-report'
+      artifact: 'html-report-${{ parameters.platform }}-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}'
+      publishLocation: 'pipeline'
+    condition: and(always(), exists('playwright-report'))
+
+  # Upload coverage reports if they exist
+  - script: |
+      if [ -d "coverage" ]; then
+        echo "Coverage reports found"
+        ls -la coverage/
+      else
+        echo "No coverage reports found"
+      fi
+    displayName: 'Check for coverage reports'
+    condition: eq(variables['Agent.OS'], 'Linux')
+
+  - powershell: |
+      if (Test-Path "coverage") {
+        Write-Host "Coverage reports found"
+        Get-ChildItem -Path "coverage" -Recurse
+      } else {
+        Write-Host "No coverage reports found"
+      }
+    displayName: 'Check for coverage reports'
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+  - task: PublishCodeCoverageResults@1
+    displayName: 'Publish Code Coverage'
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: 'coverage/cobertura-coverage.xml'
+      reportDirectory: 'coverage'
+    condition: and(always(), exists('coverage/cobertura-coverage.xml'))
