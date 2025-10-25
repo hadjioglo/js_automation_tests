@@ -62,7 +62,6 @@ steps:
   - script: |
       echo "Browser: ${{ parameters.browser }}"
       echo "Platform: ${{ parameters.platform }}"
-      echo "Shard: $(shardIndex)/$(shardTotal)"
       echo "Node version: $(node --version)"
       echo "NPM version: $(npm --version)"
     displayName: 'Display environment info'

@@ -32,8 +32,6 @@ variables:
     value: 'test-results/screenshots'
   - name: reportsPath
     value: 'reports'
-  - name: shardCount
-    value: 4
 
 parameters:
   - name: runE2ETests
@@ -100,13 +98,7 @@ stages:
             displayName: 'Windows - ${{ upper(browser) }} Tests'
             pool:
               vmImage: 'windows-latest'
-            strategy:
-              matrix:
-                ${{ each shard in range(1, variables.shardCount) }}:
-                  Shard_${{ shard }}:
-                    shardIndex: ${{ shard }}
-                    shardTotal: $(shardCount)
-            timeoutInMinutes: 30
+            timeoutInMinutes: 45
             steps:
               - template: templates/test-setup.yml
                 parameters:
@@ -115,18 +107,18 @@ stages:
 
               - ${{ if parameters.runE2ETests }}:
                 - script: |
-                    npx playwright test --project=${{ browser }} --shard=$(shardIndex)/$(shardTotal) --reporter=junit,html
-                  displayName: 'Run E2E Tests - ${{ upper(browser) }} (Shard $(shardIndex))'
+                    npx playwright test --project=${{ browser }} --reporter=junit,html
+                  displayName: 'Run E2E Tests - ${{ upper(browser) }}'
                   env:
                     BROWSER: ${{ browser }}
                     CI: true
-                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}-shard-$(shardIndex).xml'
+                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
                   continueOnError: true
 
               - ${{ if parameters.runApiTests }}:
                 - script: |
-                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}-shard-$(shardIndex).xml
-                  displayName: 'Run API Tests - Shard $(shardIndex)'
+                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}.xml
+                  displayName: 'Run API Tests'
                   env:
                     CI: true
                   continueOnError: true
@@ -135,7 +127,6 @@ stages:
                 parameters:
                   browser: ${{ browser }}
                   platform: 'windows'
-                  shardIndex: '$(shardIndex)'
 
   - stage: TestLinux
     displayName: 'Linux Cross-Browser Testing'
@@ -148,13 +139,7 @@ stages:
             displayName: 'Linux - ${{ upper(browser) }} Tests'
             pool:
               vmImage: 'ubuntu-latest'
-            strategy:
-              matrix:
-                ${{ each shard in range(1, variables.shardCount) }}:
-                  Shard_${{ shard }}:
-                    shardIndex: ${{ shard }}
-                    shardTotal: $(shardCount)
-            timeoutInMinutes: 30
+            timeoutInMinutes: 45
             steps:
               - template: templates/test-setup.yml
                 parameters:
@@ -163,18 +148,18 @@ stages:
 
               - ${{ if parameters.runE2ETests }}:
                 - script: |
-                    xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test --project=${{ browser }} --shard=$(shardIndex)/$(shardTotal) --reporter=junit,html
-                  displayName: 'Run E2E Tests - ${{ upper(browser) }} (Shard $(shardIndex))'
+                    xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test --project=${{ browser }} --reporter=junit,html
+                  displayName: 'Run E2E Tests - ${{ upper(browser) }}'
                   env:
                     BROWSER: ${{ browser }}
                     CI: true
-                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}-shard-$(shardIndex).xml'
+                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
                   continueOnError: true
 
               - ${{ if parameters.runApiTests }}:
                 - script: |
-                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}-shard-$(shardIndex).xml
-                  displayName: 'Run API Tests - Shard $(shardIndex)'
+                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}.xml
+                  displayName: 'Run API Tests'
                   env:
                     CI: true
                   continueOnError: true
@@ -183,7 +168,6 @@ stages:
                 parameters:
                   browser: ${{ browser }}
                   platform: 'linux'
-                  shardIndex: '$(shardIndex)'
 
   - stage: Reporting
     displayName: 'Test Reporting and Notifications'
