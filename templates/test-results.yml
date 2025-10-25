@@ -6,27 +6,25 @@ parameters:
     type: string
   - name: platform
     type: string
-  - name: shardIndex
-    type: string
 
 steps:
   - task: PublishTestResults@2
-    displayName: 'Publish ${{ upper(parameters.browser) }} Test Results (Shard ${{ parameters.shardIndex }})'
+    displayName: 'Publish ${{ upper(parameters.browser) }} Test Results'
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: 'test-results/junit-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}.xml'
+      testResultsFiles: 'test-results/junit-${{ parameters.browser }}.xml'
       failTaskOnFailedTests: false
-      testRunTitle: '${{ upper(parameters.platform) }} - ${{ upper(parameters.browser) }} Tests (Shard ${{ parameters.shardIndex }})'
+      testRunTitle: '${{ upper(parameters.platform) }} - ${{ upper(parameters.browser) }} Tests'
       publishRunAttachments: true
     condition: always()
 
   - task: PublishTestResults@2
-    displayName: 'Publish API Test Results (Shard ${{ parameters.shardIndex }})'
+    displayName: 'Publish API Test Results'
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: 'test-results/junit-api-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}.xml'
+      testResultsFiles: 'test-results/junit-api-${{ parameters.browser }}.xml'
       failTaskOnFailedTests: false
-      testRunTitle: 'API Tests - ${{ upper(parameters.browser) }} (Shard ${{ parameters.shardIndex }})'
+      testRunTitle: 'API Tests - ${{ upper(parameters.browser) }}'
       publishRunAttachments: true
     condition: always()
 
@@ -49,7 +47,7 @@ steps:
     displayName: 'Publish ${{ upper(parameters.browser) }} Test Results'
     inputs:
       targetPath: 'test-results'
-      artifact: 'test-results-${{ parameters.platform }}-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}'
+      artifact: 'test-results-${{ parameters.platform }}-${{ parameters.browser }}'
       publishLocation: 'pipeline'
     condition: always()
 
@@ -57,7 +55,7 @@ steps:
     displayName: 'Publish ${{ upper(parameters.browser) }} Screenshots'
     inputs:
       targetPath: 'test-results/screenshots'
-      artifact: 'screenshots-${{ parameters.platform }}-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}'
+      artifact: 'screenshots-${{ parameters.platform }}-${{ parameters.browser }}'
       publishLocation: 'pipeline'
     condition: always()
 
@@ -65,7 +63,7 @@ steps:
     displayName: 'Publish HTML Reports'
     inputs:
       targetPath: 'playwright-report'
-      artifact: 'html-report-${{ parameters.platform }}-${{ parameters.browser }}-shard-${{ parameters.shardIndex }}'
+      artifact: 'html-report-${{ parameters.platform }}-${{ parameters.browser }}'
       publishLocation: 'pipeline'
     condition: and(always(), exists('playwright-report'))
 
