@@ -1,0 +1,68 @@
+# Test Setup Template
+# Reusable template for setting up test environment across different platforms and browsers
+
+parameters:
+  - name: browser
+    type: string
+  - name: platform
+    type: string
+
+steps:
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download build artifacts'
+    inputs:
+      buildType: 'current'
+      artifactName: 'build-output'
+      targetPath: '$(System.DefaultWorkingDirectory)'
+
+  - task: NodeTool@0
+    displayName: 'Install Node.js $(nodeVersion)'
+    inputs:
+      versionSpec: '$(nodeVersion)'
+
+  - task: Cache@2
+    displayName: 'Cache node_modules'
+    inputs:
+      key: 'npm | "$(Agent.OS)" | package-lock.json'
+      restoreKeys: |
+        npm | "$(Agent.OS)"
+        npm
+      path: '$(System.DefaultWorkingDirectory)/node_modules'
+
+  - script: npm ci
+    displayName: 'Install dependencies'
+    env:
+      NODE_ENV: test
+
+  - ${{ if eq(parameters.platform, 'linux') }}:
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb
+      displayName: 'Install xvfb for headless testing'
+
+  - script: npx playwright install ${{ parameters.browser }} --with-deps
+    displayName: 'Install ${{ upper(parameters.browser) }} browser'
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: 0
+
+  - script: |
+      mkdir -p test-results
+      mkdir -p test-results/screenshots
+      mkdir -p reports
+    displayName: 'Create test directories'
+    condition: eq(variables['Agent.OS'], 'Linux')
+
+  - powershell: |
+      New-Item -ItemType Directory -Path "test-results" -Force
+      New-Item -ItemType Directory -Path "test-results\screenshots" -Force
+      New-Item -ItemType Directory -Path "reports" -Force
+    displayName: 'Create test directories'
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+  - script: |
+      echo "Browser: ${{ parameters.browser }}"
+      echo "Platform: ${{ parameters.platform }}"
+      echo "Shard: $(shardIndex)/$(shardTotal)"
+      echo "Node version: $(node --version)"
+      echo "NPM version: $(npm --version)"
+    displayName: 'Display environment info'
