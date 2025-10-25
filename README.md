@@ -172,6 +172,29 @@ npm run test:cross-browser
 - HTML Reports: `reports/html/index.html`
 - Allure Reports: `reports/allure-report/index.html`
 
+## 🔄 CI/CD Pipeline
+
+The project includes a comprehensive Azure DevOps pipeline for automated testing across multiple environments and browsers. 
+
+### Pipeline Features
+
+- **Cross-browser testing** on Windows agents
+- **Sequential test execution** to avoid parallelism constraints
+- **Automated reporting** with HTML artifacts
+- **Email notifications** on test failures
+- **Test result aggregation** across all browsers
+
+### Configuration
+
+For detailed pipeline setup and configuration instructions, see:
+📄 **[Pipeline Configuration Guide](docs/PIPELINE_CONFIGURATION.md)**
+
+The pipeline supports:
+- Multiple notification methods (Graph API, SMTP)
+- Configurable test parameters
+- Artifact publishing and retention
+- Environment-specific deployments
+
 ## 🏛️ Framework Components
 
 ### Page Object Model

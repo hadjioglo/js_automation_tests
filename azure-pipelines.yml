@@ -32,8 +32,6 @@ variables:
     value: 'test-results/screenshots'
   - name: reportsPath
     value: 'reports'
-  - name: shardCount
-    value: 4
 
 parameters:
   - name: runE2ETests
@@ -59,7 +57,7 @@ stages:
       - job: BuildJob
         displayName: 'Build Application'
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: 'windows-latest'
         steps:
           - task: NodeTool@0
             displayName: 'Install Node.js $(nodeVersion)'
@@ -89,113 +87,55 @@ stages:
               artifact: 'build-output'
               publishLocation: 'pipeline'
 
-  - stage: TestWindows
+  - stage: Test
     displayName: 'Windows Cross-Browser Testing'
     dependsOn: Build
     condition: succeeded()
     jobs:
       - ${{ each browser in parameters.browsers }}:
-        - ${{ if or(ne(browser, 'edge'), eq(variables['Agent.OS'], 'Windows_NT')) }}:
-          - job: Test_Windows_${{ browser }}
-            displayName: 'Windows - ${{ upper(browser) }} Tests'
-            pool:
-              vmImage: 'windows-latest'
-            strategy:
-              matrix:
-                ${{ each shard in range(1, variables.shardCount) }}:
-                  Shard_${{ shard }}:
-                    shardIndex: ${{ shard }}
-                    shardTotal: $(shardCount)
-            timeoutInMinutes: 30
-            steps:
-              - template: templates/test-setup.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'windows'
+        - job: Test_${{ browser }}
+          displayName: 'Windows - ${{ upper(browser) }} Tests'
+          pool:
+            vmImage: 'windows-latest'
+          timeoutInMinutes: 45
+          steps:
+            - template: templates/test-setup.yml
+              parameters:
+                browser: ${{ browser }}
+                platform: 'windows'
 
-              - ${{ if parameters.runE2ETests }}:
-                - script: |
-                    npx playwright test --project=${{ browser }} --shard=$(shardIndex)/$(shardTotal) --reporter=junit,html
-                  displayName: 'Run E2E Tests - ${{ upper(browser) }} (Shard $(shardIndex))'
-                  env:
-                    BROWSER: ${{ browser }}
-                    CI: true
-                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}-shard-$(shardIndex).xml'
-                  continueOnError: true
+            - ${{ if parameters.runE2ETests }}:
+              - script: |
+                  npx playwright test --project=${{ browser }} --reporter=junit,html
+                displayName: 'Run E2E Tests - ${{ upper(browser) }}'
+                env:
+                  BROWSER: ${{ browser }}
+                  CI: true
+                  PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
+                continueOnError: true
 
-              - ${{ if parameters.runApiTests }}:
-                - script: |
-                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}-shard-$(shardIndex).xml
-                  displayName: 'Run API Tests - Shard $(shardIndex)'
-                  env:
-                    CI: true
-                  continueOnError: true
+            - ${{ if parameters.runApiTests }}:
+              - script: |
+                  npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}.xml
+                displayName: 'Run API Tests'
+                env:
+                  CI: true
+                continueOnError: true
 
-              - template: templates/test-results.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'windows'
-                  shardIndex: '$(shardIndex)'
-
-  - stage: TestLinux
-    displayName: 'Linux Cross-Browser Testing'
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
-      - ${{ each browser in parameters.browsers }}:
-        - ${{ if ne(browser, 'edge') }}:
-          - job: Test_Linux_${{ browser }}
-            displayName: 'Linux - ${{ upper(browser) }} Tests'
-            pool:
-              vmImage: 'ubuntu-latest'
-            strategy:
-              matrix:
-                ${{ each shard in range(1, variables.shardCount) }}:
-                  Shard_${{ shard }}:
-                    shardIndex: ${{ shard }}
-                    shardTotal: $(shardCount)
-            timeoutInMinutes: 30
-            steps:
-              - template: templates/test-setup.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'linux'
-
-              - ${{ if parameters.runE2ETests }}:
-                - script: |
-                    xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test --project=${{ browser }} --shard=$(shardIndex)/$(shardTotal) --reporter=junit,html
-                  displayName: 'Run E2E Tests - ${{ upper(browser) }} (Shard $(shardIndex))'
-                  env:
-                    BROWSER: ${{ browser }}
-                    CI: true
-                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}-shard-$(shardIndex).xml'
-                  continueOnError: true
-
-              - ${{ if parameters.runApiTests }}:
-                - script: |
-                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}-shard-$(shardIndex).xml
-                  displayName: 'Run API Tests - Shard $(shardIndex)'
-                  env:
-                    CI: true
-                  continueOnError: true
-
-              - template: templates/test-results.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'linux'
-                  shardIndex: '$(shardIndex)'
+            - template: templates/test-results.yml
+              parameters:
+                browser: ${{ browser }}
+                platform: 'windows'
 
   - stage: Reporting
     displayName: 'Test Reporting and Notifications'
-    dependsOn: 
-      - TestWindows
-      - TestLinux
+    dependsOn: Test
     condition: always()
     jobs:
       - job: PublishResults
         displayName: 'Publish Test Results'
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: 'windows-latest'
         steps:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download all test artifacts'
@@ -216,11 +156,12 @@ stages:
               publishRunAttachments: true
             condition: always()
 
-          - task: PublishHtmlReport@1
+          - task: PublishPipelineArtifact@1
             displayName: 'Publish HTML Report'
             inputs:
-              reportDir: '$(System.DefaultWorkingDirectory)/artifacts/**/html'
-              tabName: 'Test Report'
+              targetPath: '$(System.DefaultWorkingDirectory)/artifacts'
+              artifact: 'html-test-reports'
+              publishLocation: 'pipeline'
             condition: always()
 
           - task: PublishPipelineArtifact@1
@@ -236,17 +177,21 @@ stages:
         dependsOn: PublishResults
         condition: failed()
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: 'windows-latest'
         variables:
           testResults: $[ dependencies.PublishResults.outputs['testResults.outcome'] ]
         steps:
-          - task: SendEmail@1
+          - task: PowerShell@2
             displayName: 'Send Email Notification on Failure'
             inputs:
-              To: 'alexandr.hadjioglo@amdaris.com'
-              From: '$(Build.RequestedForEmail)'
-              Subject: '❌ Factory Direct Tests Failed - Build $(Build.BuildNumber)'
-              Body: |
+              targetType: 'inline'
+              script: |
+                # Email notification script
+                $To = "alexandr.hadjioglo@amdaris.com"
+                $Subject = "❌ Factory Direct Tests Failed - Build $(Build.BuildNumber)"
+                $BuildUrl = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+                
+                $Body = @"
                 <html>
                 <body style="font-family: Arial, sans-serif; margin: 20px;">
                   <h2 style="color: #d73a49;">❌ Test Automation Failed</h2>
@@ -272,7 +217,7 @@ stages:
                   <div style="margin: 30px 0;">
                     <h3>Quick Actions</h3>
                     <p>
-                      <a href="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)" 
+                      <a href="$BuildUrl" 
                          style="background-color: #0366d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                         📊 View Build Results
                       </a>
@@ -286,13 +231,76 @@ stages:
                   
                   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e4e8; color: #586069; font-size: 12px;">
                     <p>This email was automatically generated by Azure Pipelines for the Factory Direct test automation pipeline.</p>
-                    <p>Build URL: <a href="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)">$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)</a></p>
+                    <p>Build URL: <a href="$BuildUrl">$BuildUrl</a></p>
                   </div>
                 </body>
                 </html>
-              BodyAsHtml: true
-              SmtpServer: '$(SMTP_SERVER)'
-              SmtpUsername: '$(SMTP_USERNAME)'
-              SmtpPassword: '$(SMTP_PASSWORD)'
-              EnableSsl: true
+                "@
+                
+                try {
+                  # Option 1: Using Microsoft Graph API (requires Azure App Registration)
+                  if ("$(GRAPH_CLIENT_ID)" -and "$(GRAPH_CLIENT_SECRET)" -and "$(GRAPH_TENANT_ID)") {
+                    Write-Host "Sending email via Microsoft Graph API..."
+                    
+                    # Get access token
+                    $tokenBody = @{
+                      client_id = "$(GRAPH_CLIENT_ID)"
+                      client_secret = "$(GRAPH_CLIENT_SECRET)"
+                      scope = "https://graph.microsoft.com/.default"
+                      grant_type = "client_credentials"
+                    }
+                    
+                    $tokenResponse = Invoke-RestMethod -Uri "https://login.microsoftonline.com/$(GRAPH_TENANT_ID)/oauth2/v2.0/token" -Method Post -Body $tokenBody
+                    $accessToken = $tokenResponse.access_token
+                    
+                    # Send email
+                    $emailBody = @{
+                      message = @{
+                        subject = $Subject
+                        body = @{
+                          contentType = "HTML"
+                          content = $Body
+                        }
+                        toRecipients = @(
+                          @{
+                            emailAddress = @{
+                              address = $To
+                            }
+                          }
+                        )
+                      }
+                    }
+                    
+                    $headers = @{
+                      'Authorization' = "Bearer $accessToken"
+                      'Content-Type' = 'application/json'
+                    }
+                    
+                    Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/users/$(Build.RequestedForEmail)/sendMail" -Method Post -Body ($emailBody | ConvertTo-Json -Depth 10) -Headers $headers
+                    Write-Host "Email sent successfully via Microsoft Graph API"
+                  }
+                  # Option 2: Using SMTP (fallback)
+                  elseif ("$(SMTP_SERVER)" -and "$(SMTP_USERNAME)" -and "$(SMTP_PASSWORD)") {
+                    Write-Host "Sending email via SMTP..."
+                    
+                    $smtpServer = "$(SMTP_SERVER)"
+                    $smtpPort = if ("$(SMTP_PORT)") { "$(SMTP_PORT)" } else { 587 }
+                    $smtpUsername = "$(SMTP_USERNAME)"
+                    $smtpPassword = ConvertTo-SecureString "$(SMTP_PASSWORD)" -AsPlainText -Force
+                    $credential = New-Object System.Management.Automation.PSCredential($smtpUsername, $smtpPassword)
+                    
+                    Send-MailMessage -To $To -From $smtpUsername -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $smtpServer -Port $smtpPort -UseSsl -Credential $credential
+                    Write-Host "Email sent successfully via SMTP"
+                  }
+                  else {
+                    Write-Host "No email configuration found. Skipping email notification."
+                    Write-Host "To enable email notifications, configure either:"
+                    Write-Host "1. Microsoft Graph API: GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_TENANT_ID"
+                    Write-Host "2. SMTP: SMTP_SERVER, SMTP_USERNAME, SMTP_PASSWORD, SMTP_PORT (optional)"
+                  }
+                }
+                catch {
+                  Write-Warning "Failed to send email notification: $($_.Exception.Message)"
+                  Write-Host "Build failed. Manual review required at: $BuildUrl"
+                }
             continueOnError: true
