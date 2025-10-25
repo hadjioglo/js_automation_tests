@@ -92,18 +92,32 @@ stages:
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - ${{ each browser in parameters.browsers }}:
-        - job: Test_${{ browser }}
-          displayName: 'Windows - ${{ upper(browser) }} Tests'
-          pool:
-            vmImage: 'windows-latest'
-          timeoutInMinutes: 45
-          steps:
-            - template: templates/test-setup.yml
-              parameters:
-                browser: ${{ browser }}
-                platform: 'windows'
+      - job: TestAllBrowsers
+        displayName: 'Windows - All Browser Tests (Sequential)'
+        pool:
+          vmImage: 'windows-latest'
+        timeoutInMinutes: 120
+        steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download build artifacts'
+            inputs:
+              artifactName: 'build-output'
+              downloadPath: '$(System.DefaultWorkingDirectory)'
 
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: '$(nodeVersion)'
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install chromium firefox webkit
+            displayName: 'Install all browsers'
+            condition: ${{ parameters.runE2ETests }}
+
+          # Run tests for each browser sequentially
+          - ${{ each browser in parameters.browsers }}:
             - ${{ if parameters.runE2ETests }}:
               - script: |
                   npx playwright test --project=${{ browser }} --reporter=junit,html
@@ -114,18 +128,37 @@ stages:
                   PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
                 continueOnError: true
 
-            - ${{ if parameters.runApiTests }}:
-              - script: |
-                  npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}.xml
-                displayName: 'Run API Tests'
-                env:
-                  CI: true
-                continueOnError: true
+          - ${{ if parameters.runApiTests }}:
+            - script: |
+                npm run test:api -- --reporter=junit --outputFile=test-results/junit-api.xml
+              displayName: 'Run API Tests'
+              env:
+                CI: true
+              continueOnError: true
 
-            - template: templates/test-results.yml
-              parameters:
-                browser: ${{ browser }}
-                platform: 'windows'
+          - task: PublishTestResults@2
+            displayName: 'Publish Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results/junit-*.xml'
+              failTaskOnFailedTests: true
+            condition: always()
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Screenshots'
+            inputs:
+              targetPath: '$(screenshotsPath)'
+              artifact: 'screenshots'
+              publishLocation: 'pipeline'
+            condition: always()
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish HTML Reports'
+            inputs:
+              targetPath: '$(reportsPath)'
+              artifact: 'html-reports'
+              publishLocation: 'pipeline'
+            condition: always()
 
   - stage: Reporting
     displayName: 'Test Reporting and Notifications'

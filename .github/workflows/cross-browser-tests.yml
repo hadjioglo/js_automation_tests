@@ -1,0 +1,137 @@
+name: Factory Direct Cross-Browser Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Generate cache key
+      id: cache-key
+      run: echo "key=npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build --if-present
+      env:
+        NODE_ENV: test
+    
+    - name: Cache build output
+      uses: actions/cache/save@v3
+      with:
+        path: |
+          node_modules
+          dist
+        key: ${{ steps.cache-key.outputs.key }}
+
+  test-matrix:
+    needs: build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        test-type: [e2e, api]
+        exclude:
+          - browser: firefox
+            test-type: api
+          - browser: webkit
+            test-type: api
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Restore build cache
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          node_modules
+          dist
+        key: ${{ needs.build.outputs.cache-key }}
+    
+    - name: Install Playwright browsers
+      run: npx playwright install ${{ matrix.browser }}
+      if: matrix.test-type == 'e2e'
+    
+    - name: Run E2E tests
+      run: npm run test:e2e:${{ matrix.browser }}
+      if: matrix.test-type == 'e2e'
+      env:
+        CI: true
+        BROWSER: ${{ matrix.browser }}
+    
+    - name: Run API tests
+      run: npm run test:api
+      if: matrix.test-type == 'api' && matrix.browser == 'chromium'
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.browser }}-${{ matrix.test-type }}
+        path: |
+          test-results/
+          reports/
+        retention-days: 7
+    
+    - name: Upload screenshots
+      uses: actions/upload-artifact@v4
+      if: always() && matrix.test-type == 'e2e'
+      with:
+        name: screenshots-${{ matrix.browser }}
+        path: test-results/screenshots/
+        retention-days: 7
+
+  report:
+    needs: [build, test-matrix]
+    runs-on: windows-latest
+    if: always()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+    
+    - name: Generate test report
+      run: |
+        echo "# Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## Build Status: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "## Test Status: ${{ needs.test-matrix.result }}" >> $GITHUB_STEP_SUMMARY
+        
+        # List all artifacts
+        echo "## Generated Artifacts:" >> $GITHUB_STEP_SUMMARY
+        Get-ChildItem -Path "artifacts/" -Recurse -Directory | ForEach-Object { echo "- $($_.Name)" >> $GITHUB_STEP_SUMMARY }
