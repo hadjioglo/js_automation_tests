@@ -57,7 +57,7 @@ stages:
       - job: BuildJob
         displayName: 'Build Application'
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: 'windows-latest'
         steps:
           - task: NodeTool@0
             displayName: 'Install Node.js $(nodeVersion)'
@@ -87,99 +87,55 @@ stages:
               artifact: 'build-output'
               publishLocation: 'pipeline'
 
-  - stage: TestWindows
+  - stage: Test
     displayName: 'Windows Cross-Browser Testing'
     dependsOn: Build
     condition: succeeded()
     jobs:
       - ${{ each browser in parameters.browsers }}:
-        - ${{ if or(ne(browser, 'edge'), eq(variables['Agent.OS'], 'Windows_NT')) }}:
-          - job: Test_Windows_${{ browser }}
-            displayName: 'Windows - ${{ upper(browser) }} Tests'
-            pool:
-              vmImage: 'windows-latest'
-            timeoutInMinutes: 45
-            steps:
-              - template: templates/test-setup.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'windows'
+        - job: Test_${{ browser }}
+          displayName: 'Windows - ${{ upper(browser) }} Tests'
+          pool:
+            vmImage: 'windows-latest'
+          timeoutInMinutes: 45
+          steps:
+            - template: templates/test-setup.yml
+              parameters:
+                browser: ${{ browser }}
+                platform: 'windows'
 
-              - ${{ if parameters.runE2ETests }}:
-                - script: |
-                    npx playwright test --project=${{ browser }} --reporter=junit,html
-                  displayName: 'Run E2E Tests - ${{ upper(browser) }}'
-                  env:
-                    BROWSER: ${{ browser }}
-                    CI: true
-                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
-                  continueOnError: true
+            - ${{ if parameters.runE2ETests }}:
+              - script: |
+                  npx playwright test --project=${{ browser }} --reporter=junit,html
+                displayName: 'Run E2E Tests - ${{ upper(browser) }}'
+                env:
+                  BROWSER: ${{ browser }}
+                  CI: true
+                  PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
+                continueOnError: true
 
-              - ${{ if parameters.runApiTests }}:
-                - script: |
-                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}.xml
-                  displayName: 'Run API Tests'
-                  env:
-                    CI: true
-                  continueOnError: true
+            - ${{ if parameters.runApiTests }}:
+              - script: |
+                  npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}.xml
+                displayName: 'Run API Tests'
+                env:
+                  CI: true
+                continueOnError: true
 
-              - template: templates/test-results.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'windows'
-
-  - stage: TestLinux
-    displayName: 'Linux Cross-Browser Testing'
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
-      - ${{ each browser in parameters.browsers }}:
-        - ${{ if ne(browser, 'edge') }}:
-          - job: Test_Linux_${{ browser }}
-            displayName: 'Linux - ${{ upper(browser) }} Tests'
-            pool:
-              vmImage: 'ubuntu-latest'
-            timeoutInMinutes: 45
-            steps:
-              - template: templates/test-setup.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'linux'
-
-              - ${{ if parameters.runE2ETests }}:
-                - script: |
-                    xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test --project=${{ browser }} --reporter=junit,html
-                  displayName: 'Run E2E Tests - ${{ upper(browser) }}'
-                  env:
-                    BROWSER: ${{ browser }}
-                    CI: true
-                    PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
-                  continueOnError: true
-
-              - ${{ if parameters.runApiTests }}:
-                - script: |
-                    npm run test:api -- --reporter=junit --outputFile=test-results/junit-api-${{ browser }}.xml
-                  displayName: 'Run API Tests'
-                  env:
-                    CI: true
-                  continueOnError: true
-
-              - template: templates/test-results.yml
-                parameters:
-                  browser: ${{ browser }}
-                  platform: 'linux'
+            - template: templates/test-results.yml
+              parameters:
+                browser: ${{ browser }}
+                platform: 'windows'
 
   - stage: Reporting
     displayName: 'Test Reporting and Notifications'
-    dependsOn: 
-      - TestWindows
-      - TestLinux
+    dependsOn: Test
     condition: always()
     jobs:
       - job: PublishResults
         displayName: 'Publish Test Results'
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: 'windows-latest'
         steps:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download all test artifacts'
@@ -221,7 +177,7 @@ stages:
         dependsOn: PublishResults
         condition: failed()
         pool:
-          vmImage: 'ubuntu-latest'
+          vmImage: 'windows-latest'
         variables:
           testResults: $[ dependencies.PublishResults.outputs['testResults.outcome'] ]
         steps:

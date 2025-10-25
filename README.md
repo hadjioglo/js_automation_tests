@@ -178,8 +178,8 @@ The project includes a comprehensive Azure DevOps pipeline for automated testing
 
 ### Pipeline Features
 
-- **Cross-browser testing** on Windows and Linux agents
-- **Parallel test execution** with browser sharding
+- **Cross-browser testing** on Windows agents
+- **Sequential test execution** to avoid parallelism constraints
 - **Automated reporting** with HTML artifacts
 - **Email notifications** on test failures
 - **Test result aggregation** across all browsers

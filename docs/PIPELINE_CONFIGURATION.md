@@ -49,12 +49,38 @@ Set these pipeline variables:
 - **Gmail:** smtp.gmail.com:587
 - **Yahoo:** smtp.mail.yahoo.com:587
 
+## Parallelism Considerations
+
+### Current Configuration
+The pipeline is configured to run only on Windows agents to avoid Azure DevOps hosted parallelism limitations. This means:
+
+- All test jobs run sequentially
+- Only Windows browser testing is performed
+- Reduced pipeline execution time compared to parallel execution
+- Compatible with free Azure DevOps accounts
+
+### Enabling Parallel Execution
+If your organization has parallelism grants or purchases, you can:
+
+1. **Request Free Parallelism**: Visit https://aka.ms/azpipelines-parallelism-request
+2. **Purchase Parallelism**: Add parallel jobs in Azure DevOps organization settings
+3. **Restore Linux Testing**: Uncomment the Linux stage in the pipeline
+4. **Enable Cross-Platform**: Test on both Windows and Linux agents
+
+### Pipeline Optimization Tips
+- Use `condition: succeeded()` to prevent unnecessary job execution
+- Set appropriate `timeoutInMinutes` to avoid hanging jobs
+- Use `continueOnError: true` for non-critical test failures
+- Cache dependencies to speed up build times
+
 ## Pipeline Features
 
 ### Cross-Browser Testing
-- Tests run on Windows and Linux agents
+- Tests run on Windows agents only (due to parallelism limitations)
 - Supports Chrome, Firefox, and Edge browsers
-- Parallel execution with test sharding
+- Sequential execution to avoid parallelism constraints
+
+> **Note**: The pipeline is configured for Windows-only execution due to Azure DevOps hosted parallelism limitations. For organizations with parallelism grants, the pipeline can be easily modified to include Linux agents for broader platform coverage.
 
 ### Test Reporting
 - JUnit XML results for Azure DevOps integration
