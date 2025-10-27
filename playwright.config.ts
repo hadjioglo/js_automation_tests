@@ -167,6 +167,18 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       grep: /@smoke/,
       retries: 0
+    },
+    
+    // Visual regression tests
+    {
+      name: 'visual-regression',
+      testDir: './tests/e2e',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome'
+      },
+      dependencies: ['setup'],
+      grep: /@visual/
     }
   ],
   

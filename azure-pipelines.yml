@@ -42,23 +42,16 @@ parameters:
     displayName: 'Run API Tests'
     type: boolean
     default: true
-  - name: browsers
-    displayName: 'Browsers to Test'
-    type: object
-    default:
-      - chrome
 
 stages:
-  - stage: BuildAndTest
-    displayName: 'Build and Test (Sequential)'
+  - stage: Build_Test_Report
+    displayName: 'Build, Test and Report'
     jobs:
-      - job: Sequential_Build_And_Test
-        displayName: 'Sequential Build and Test Execution'
+      - job: SingleJob
+        displayName: 'Complete Pipeline Execution'
         pool:
           vmImage: 'windows-latest'
         timeoutInMinutes: 180
-        strategy:
-          maxParallel: 1  # Force sequential execution
         steps:
           - task: NodeTool@0
             displayName: 'Install Node.js $(nodeVersion)'
@@ -95,17 +88,16 @@ stages:
                 CI: true
               continueOnError: true
 
-          # Run E2E tests for each browser sequentially (one at a time)
-          - ${{ each browser in parameters.browsers }}:
-            - ${{ if parameters.runE2ETests }}:
-              - script: |
-                  npx playwright test --project=${{ browser }} --reporter=junit,html --workers=1
-                displayName: 'Run E2E Tests - ${{ upper(browser) }}'
-                env:
-                  BROWSER: ${{ browser }}
-                  CI: true
-                  PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-${{ browser }}.xml'
-                continueOnError: true
+          # Run E2E tests for Chrome only
+          - ${{ if parameters.runE2ETests }}:
+            - script: |
+                npx playwright test --project=chrome --reporter=junit,html --workers=1
+              displayName: 'Run E2E Tests - Chrome'
+              env:
+                BROWSER: chrome
+                CI: true
+                PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-chrome.xml'
+              continueOnError: true
 
           - task: PublishTestResults@2
             displayName: 'Publish Test Results'
@@ -131,184 +123,13 @@ stages:
               publishLocation: 'pipeline'
             condition: always()
 
-  - stage: Reporting
-    displayName: 'Test Reporting and Notifications'
-    dependsOn: BuildAndTest
-    condition: always()
-    jobs:
-      - job: PublishResults
-        displayName: 'Publish Test Results'
-        pool:
-          vmImage: 'windows-latest'
-        strategy:
-          maxParallel: 1  # Ensure no parallel execution
-        steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download all test artifacts'
-            inputs:
-              buildType: 'current'
-              itemPattern: '**'
-              targetPath: '$(System.DefaultWorkingDirectory)/artifacts'
-
-          - task: PublishTestResults@2
-            displayName: 'Publish Test Results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '**/junit-*.xml'
-              searchFolder: '$(System.DefaultWorkingDirectory)/artifacts'
-              mergeTestResults: true
-              failTaskOnFailedTests: false
-              testRunTitle: 'Cross-Browser Test Results'
-              publishRunAttachments: true
-            condition: always()
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish HTML Report'
-            inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)/artifacts'
-              artifact: 'html-test-reports'
-              publishLocation: 'pipeline'
-            condition: always()
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Screenshots'
-            inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)/artifacts/**/screenshots'
-              artifact: 'test-screenshots'
-              publishLocation: 'pipeline'
-            condition: always()
-
-      - job: NotifyEmail
-        displayName: 'Send Email Notification'
-        dependsOn: PublishResults
-        condition: failed()
-        pool:
-          vmImage: 'windows-latest'
-        strategy:
-          maxParallel: 1  # Ensure no parallel execution
-        variables:
-          testResults: $[ dependencies.PublishResults.outputs['testResults.outcome'] ]
-        steps:
+          # Email notification on failure (optional)
           - task: PowerShell@2
             displayName: 'Send Email Notification on Failure'
+            condition: failed()
             inputs:
               targetType: 'inline'
               script: |
-                # Email notification script
-                $To = "alexandr.hadjioglo@amdaris.com"
-                $Subject = "❌ Factory Direct Tests Failed - Build $(Build.BuildNumber)"
-                $BuildUrl = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
-                
-                $Body = @"
-                <html>
-                <body style="font-family: Arial, sans-serif; margin: 20px;">
-                  <h2 style="color: #d73a49;">❌ Test Automation Failed</h2>
-                  
-                  <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #d73a49; margin: 20px 0;">
-                    <h3>Build Information</h3>
-                    <ul style="list-style-type: none; padding: 0;">
-                      <li><strong>Repository:</strong> $(Build.Repository.Name)</li>
-                      <li><strong>Branch:</strong> $(Build.SourceBranchName)</li>
-                      <li><strong>Commit:</strong> $(Build.SourceVersion)</li>
-                      <li><strong>Build Number:</strong> $(Build.BuildNumber)</li>
-                      <li><strong>Triggered By:</strong> $(Build.RequestedFor)</li>
-                      <li><strong>Build Time:</strong> $(System.DateTime)</li>
-                    </ul>
-                  </div>
-                  
-                  <div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
-                    <h3>Test Results Summary</h3>
-                    <p>One or more test suites have failed during cross-browser testing.</p>
-                    <p>Please review the test results and take appropriate action.</p>
-                  </div>
-                  
-                  <div style="margin: 30px 0;">
-                    <h3>Quick Actions</h3>
-                    <p>
-                      <a href="$BuildUrl" 
-                         style="background-color: #0366d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
-                        📊 View Build Results
-                      </a>
-                      
-                      <a href="$(Build.Repository.Uri)" 
-                         style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                        📂 View Repository
-                      </a>
-                    </p>
-                  </div>
-                  
-                  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e4e8; color: #586069; font-size: 12px;">
-                    <p>This email was automatically generated by Azure Pipelines for the Factory Direct test automation pipeline.</p>
-                    <p>Build URL: <a href="$BuildUrl">$BuildUrl</a></p>
-                  </div>
-                </body>
-                </html>
-                "@
-                
-                try {
-                  # Option 1: Using Microsoft Graph API (requires Azure App Registration)
-                  if ("$(GRAPH_CLIENT_ID)" -and "$(GRAPH_CLIENT_SECRET)" -and "$(GRAPH_TENANT_ID)") {
-                    Write-Host "Sending email via Microsoft Graph API..."
-                    
-                    # Get access token
-                    $tokenBody = @{
-                      client_id = "$(GRAPH_CLIENT_ID)"
-                      client_secret = "$(GRAPH_CLIENT_SECRET)"
-                      scope = "https://graph.microsoft.com/.default"
-                      grant_type = "client_credentials"
-                    }
-                    
-                    $tokenResponse = Invoke-RestMethod -Uri "https://login.microsoftonline.com/$(GRAPH_TENANT_ID)/oauth2/v2.0/token" -Method Post -Body $tokenBody
-                    $accessToken = $tokenResponse.access_token
-                    
-                    # Send email
-                    $emailBody = @{
-                      message = @{
-                        subject = $Subject
-                        body = @{
-                          contentType = "HTML"
-                          content = $Body
-                        }
-                        toRecipients = @(
-                          @{
-                            emailAddress = @{
-                              address = $To
-                            }
-                          }
-                        )
-                      }
-                    }
-                    
-                    $headers = @{
-                      'Authorization' = "Bearer $accessToken"
-                      'Content-Type' = 'application/json'
-                    }
-                    
-                    Invoke-RestMethod -Uri "https://graph.microsoft.com/v1.0/users/$(Build.RequestedForEmail)/sendMail" -Method Post -Body ($emailBody | ConvertTo-Json -Depth 10) -Headers $headers
-                    Write-Host "Email sent successfully via Microsoft Graph API"
-                  }
-                  # Option 2: Using SMTP (fallback)
-                  elseif ("$(SMTP_SERVER)" -and "$(SMTP_USERNAME)" -and "$(SMTP_PASSWORD)") {
-                    Write-Host "Sending email via SMTP..."
-                    
-                    $smtpServer = "$(SMTP_SERVER)"
-                    $smtpPort = if ("$(SMTP_PORT)") { "$(SMTP_PORT)" } else { 587 }
-                    $smtpUsername = "$(SMTP_USERNAME)"
-                    $smtpPassword = ConvertTo-SecureString "$(SMTP_PASSWORD)" -AsPlainText -Force
-                    $credential = New-Object System.Management.Automation.PSCredential($smtpUsername, $smtpPassword)
-                    
-                    Send-MailMessage -To $To -From $smtpUsername -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $smtpServer -Port $smtpPort -UseSsl -Credential $credential
-                    Write-Host "Email sent successfully via SMTP"
-                  }
-                  else {
-                    Write-Host "No email configuration found. Skipping email notification."
-                    Write-Host "To enable email notifications, configure either:"
-                    Write-Host "1. Microsoft Graph API: GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_TENANT_ID"
-                    Write-Host "2. SMTP: SMTP_SERVER, SMTP_USERNAME, SMTP_PASSWORD, SMTP_PORT (optional)"
-                  }
-                }
-                catch {
-                  Write-Warning "Failed to send email notification: $($_.Exception.Message)"
-                  Write-Host "Build failed. Manual review required at: $BuildUrl"
-                }
+                Write-Host "Pipeline failed. Build URL: $(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+                Write-Host "Manual review required."
             continueOnError: true
