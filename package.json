@@ -26,6 +26,9 @@
     "test:visual": "npx playwright test --project=visual-regression",
     "test:visual:update": "npx playwright test --project=visual-regression --update-snapshots",
     "test:visual:ui": "npx playwright test --project=visual-regression --ui",
+    "test:accessibility": "npx playwright test --project=accessibility",
+    "test:accessibility:smoke": "npx playwright test --project=accessibility-smoke",
+    "test:accessibility:report": "npx playwright test --project=accessibility && echo 'Accessibility report generated in test-results/accessibility/'",
     "test:prod": "ENV=production npx playwright test",
     "cucumber": "npx cucumber-js",
     "cucumber:smoke": "npx cucumber-js --tags @smoke",
@@ -68,6 +71,7 @@
     "npm": ">=8.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@cucumber/cucumber": "^7.3.2",
     "@cucumber/playwright": "^3.1.0",
     "@playwright/test": "^1.56.1",
