@@ -179,6 +179,42 @@ export default defineConfig({
       },
       dependencies: ['setup'],
       grep: /@visual/
+    },
+    
+    // Accessibility tests
+    {
+      name: 'accessibility',
+      testDir: './tests/accessibility',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        // Disable video and traces for accessibility tests to speed them up
+        video: 'retain-on-failure',
+        trace: 'retain-on-failure'
+      },
+      dependencies: ['setup'],
+      // Run accessibility tests in serial to avoid resource conflicts
+      fullyParallel: false,
+      retries: 1, // Accessibility tests should be more deterministic
+      timeout: 60000 // Allow more time for comprehensive accessibility scans
+    },
+    
+    // Quick accessibility check (smoke test subset)
+    {
+      name: 'accessibility-smoke',
+      testDir: './tests/accessibility',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        video: 'off',
+        trace: 'off'
+      },
+      dependencies: ['setup'],
+      fullyParallel: false,
+      retries: 0,
+      timeout: 30000,
+      // Only test desktop viewport for smoke tests
+      grep: /Desktop Viewport.*Homepage.*Accessibility Compliance/
     }
   ],
   
