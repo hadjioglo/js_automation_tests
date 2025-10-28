@@ -93,6 +93,13 @@ stages:
               failTaskOnFailedTests: true
             condition: always()
 
+          # Ensure directories exist before publishing artifacts
+          - script: |
+              if not exist "test-results" mkdir test-results
+              if not exist "reports" mkdir reports
+            displayName: 'Ensure artifact directories exist'
+            condition: always()
+
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Test Results & Screenshots'
             inputs:
