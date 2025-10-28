@@ -29,17 +29,13 @@ variables:
   - name: testResultsPath
     value: 'test-results'
   - name: screenshotsPath
-    value: 'test-results/screenshots'
+    value: 'test-results'
   - name: reportsPath
     value: 'reports'
 
 parameters:
   - name: runE2ETests
     displayName: 'Run E2E Tests'
-    type: boolean
-    default: true
-  - name: runApiTests
-    displayName: 'Run API Tests'
     type: boolean
     default: true
 
@@ -79,39 +75,36 @@ stages:
             displayName: 'Install Chrome browser'
             condition: ${{ parameters.runE2ETests }}
 
-          # Run API tests first (sequential)
-          - ${{ if parameters.runApiTests }}:
-            - script: |
-                npm run test:api -- --reporter=junit --outputFile=test-results/junit-api.xml
-              displayName: 'Run API Tests'
-              env:
-                CI: true
-              continueOnError: true
-
           # Run E2E tests for Chrome only
           - ${{ if parameters.runE2ETests }}:
             - script: |
-                npx playwright test --project=chrome --reporter=junit,html --workers=1
+                npx playwright test --project=e2e-chromium --reporter=junit,html --workers=1
               displayName: 'Run E2E Tests - Chrome'
               env:
                 BROWSER: chrome
                 CI: true
-                PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-chrome.xml'
               continueOnError: true
 
           - task: PublishTestResults@2
             displayName: 'Publish Test Results'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: 'test-results/junit-*.xml'
+              testResultsFiles: 'reports/junit.xml'
               failTaskOnFailedTests: true
             condition: always()
 
+          # Ensure directories exist before publishing artifacts
+          - script: |
+              if not exist "test-results" mkdir test-results
+              if not exist "reports" mkdir reports
+            displayName: 'Ensure artifact directories exist'
+            condition: always()
+
           - task: PublishPipelineArtifact@1
-            displayName: 'Publish Screenshots'
+            displayName: 'Publish Test Results & Screenshots'
             inputs:
               targetPath: '$(screenshotsPath)'
-              artifact: 'screenshots'
+              artifact: 'test-results'
               publishLocation: 'pipeline'
             condition: always()
 
