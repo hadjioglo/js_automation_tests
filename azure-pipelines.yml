@@ -82,7 +82,7 @@ stages:
           # Run API tests first (sequential)
           - ${{ if parameters.runApiTests }}:
             - script: |
-                npm run test:api -- --reporter=junit --outputFile=test-results/junit-api.xml
+                npx playwright test --project=api-tests --reporter=junit --workers=1
               displayName: 'Run API Tests'
               env:
                 CI: true
@@ -91,19 +91,18 @@ stages:
           # Run E2E tests for Chrome only
           - ${{ if parameters.runE2ETests }}:
             - script: |
-                npx playwright test --project=chrome --reporter=junit,html --workers=1
+                npx playwright test --project=e2e-chromium --reporter=junit,html --workers=1
               displayName: 'Run E2E Tests - Chrome'
               env:
                 BROWSER: chrome
                 CI: true
-                PLAYWRIGHT_JUNIT_OUTPUT_NAME: 'test-results/junit-chrome.xml'
               continueOnError: true
 
           - task: PublishTestResults@2
             displayName: 'Publish Test Results'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: 'test-results/junit-*.xml'
+              testResultsFiles: 'reports/junit.xml'
               failTaskOnFailedTests: true
             condition: always()
 
