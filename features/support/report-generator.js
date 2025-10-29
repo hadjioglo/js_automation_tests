@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const options = {
     theme: 'bootstrap',
-    jsonFile: 'reports/cucumber-report.json',
+    jsonFile: 'reports/test-results.json',  // Use the file that actually gets generated
     output: 'reports/cucumber-report.html',
     reportSuiteAsScenarios: true,
     scenarioTimestamp: true,
