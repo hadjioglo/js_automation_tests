@@ -13,8 +13,84 @@ Given('a business stakeholder visits the Factory Direct platform', async functio
 });
 
 Given('a guest visits the Factory Direct homepage', async function () {
-  // Navigate to the homepage using homePage method
-  await this.homePage.navigateToHomePage();
+  const url = 'https://factory-direct.tilda.ws/';
+  console.log(`Attempting to navigate to: ${url}`);
+  
+  // Multiple attempts with different strategies
+  let navigationSuccess = false;
+  
+  // Strategy 1: Direct navigation with extended timeout
+  try {
+    await this.page.goto(url, { 
+      waitUntil: 'domcontentloaded', 
+      timeout: 60000 
+    });
+    await this.page.waitForTimeout(5000);
+    
+    const currentUrl = this.page.url();
+    if (!currentUrl.includes('about:blank') && currentUrl.includes('factory-direct')) {
+      navigationSuccess = true;
+      console.log(`✓ Navigation successful: ${currentUrl}`);
+    }
+  } catch (error) {
+    console.log(`Strategy 1 failed: ${error.message}`);
+  }
+  
+  // Strategy 2: If first attempt failed, try with different wait condition
+  if (!navigationSuccess) {
+    try {
+      console.log('Trying alternative navigation...');
+      await this.page.goto(url, { 
+        waitUntil: 'load', 
+        timeout: 30000 
+      });
+      await this.page.waitForTimeout(8000);
+      
+      const currentUrl = this.page.url();
+      if (!currentUrl.includes('about:blank') && currentUrl.includes('factory-direct')) {
+        navigationSuccess = true;
+        console.log(`✓ Alternative navigation successful: ${currentUrl}`);
+      }
+    } catch (error) {
+      console.log(`Strategy 2 failed: ${error.message}`);
+    }
+  }
+  
+  // Strategy 3: Force navigation with page evaluation
+  if (!navigationSuccess) {
+    try {
+      console.log('Trying forced navigation...');
+      await this.page.evaluate((url) => {
+        window.location.href = url;
+      }, url);
+      await this.page.waitForTimeout(10000);
+      
+      const currentUrl = this.page.url();
+      if (!currentUrl.includes('about:blank') && currentUrl.includes('factory-direct')) {
+        navigationSuccess = true;
+        console.log(`✓ Forced navigation successful: ${currentUrl}`);
+      }
+    } catch (error) {
+      console.log(`Strategy 3 failed: ${error.message}`);
+    }
+  }
+  
+  // Verify final state
+  const finalUrl = this.page.url();
+  console.log(`Final URL: ${finalUrl}`);
+  
+  if (!navigationSuccess || finalUrl.includes('about:blank')) {
+    throw new Error(`Navigation failed - still on: ${finalUrl}`);
+  }
+  
+  // Ensure page is ready for interaction
+  try {
+    await this.page.waitForSelector('body', { timeout: 10000 });
+    await this.page.waitForFunction(() => document.readyState === 'complete', { timeout: 10000 });
+  } catch (e) {
+    console.log('Page readiness check failed, but continuing...');
+  }
+  
   this.userRole = 'guest';
   console.log('Guest visiting Factory Direct homepage');
 });
