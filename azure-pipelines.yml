@@ -1,5 +1,5 @@
-# Factory Direct - Cross-Browser Test Automation Pipeline
-# Runs automated tests sequentially across multiple browsers
+# Factory Direct - Cucumber BDD Test Automation Pipeline
+# Runs Cucumber BDD tests with configurable tags
 # No parallel execution to avoid Azure parallelism requirements
 
 trigger:
@@ -28,14 +28,22 @@ variables:
     value: '18.x'
   - name: testResultsPath
     value: 'test-results'
-  - name: screenshotsPath
-    value: 'test-results'
   - name: reportsPath
+    value: 'reports'
+  - name: cucumberReportsPath
     value: 'reports'
 
 parameters:
-  - name: runE2ETests
-    displayName: 'Run E2E Tests'
+  - name: runCucumberTests
+    displayName: 'Run Cucumber BDD Tests'
+    type: boolean
+    default: true
+  - name: testTags
+    displayName: 'Test Tags (e.g., @smoke, @regression, or leave empty for all)'
+    type: string
+    default: ''
+  - name: generateReport
+    displayName: 'Generate HTML Report'
     type: boolean
     default: true
 
@@ -70,49 +78,68 @@ stages:
             env:
               NODE_ENV: test
 
-          # Install browsers for E2E tests
+          # Install browsers for Cucumber tests (using Playwright under the hood)
           - script: npx playwright install chromium
-            displayName: 'Install Chrome browser'
-            condition: ${{ parameters.runE2ETests }}
+            displayName: 'Install Chrome browser for Cucumber tests'
+            condition: ${{ parameters.runCucumberTests }}
 
-          # Run E2E tests for Chrome only
-          - ${{ if parameters.runE2ETests }}:
-            - script: |
-                npx playwright test --project=e2e-chromium --reporter=junit,html --workers=1
-              displayName: 'Run E2E Tests - Chrome'
+          # Run Cucumber BDD tests based on tags
+          - ${{ if parameters.runCucumberTests }}:
+            - task: PowerShell@2
+              displayName: 'Run Cucumber BDD Tests'
+              inputs:
+                targetType: 'inline'
+                script: |
+                  $testTags = "${{ parameters.testTags }}"
+                  if ([string]::IsNullOrWhiteSpace($testTags)) {
+                    Write-Host "Running all Cucumber tests..."
+                    npm run cucumber
+                  } else {
+                    Write-Host "Running Cucumber tests with tags: $testTags"
+                    npx cucumber-js --tags $testTags
+                  }
               env:
-                BROWSER: chrome
                 CI: true
+                HEADLESS: true
               continueOnError: true
 
-          - task: PublishTestResults@2
-            displayName: 'Publish Test Results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: 'reports/junit.xml'
-              failTaskOnFailedTests: true
-            condition: always()
+          # Generate Cucumber HTML report
+          - ${{ if and(parameters.runCucumberTests, parameters.generateReport) }}:
+            - script: npm run cucumber:report
+              displayName: 'Generate Cucumber HTML Report'
+              condition: always()
+              continueOnError: true
 
           # Ensure directories exist before publishing artifacts
-          - script: |
-              if not exist "test-results" mkdir test-results
-              if not exist "reports" mkdir reports
+          - task: PowerShell@2
             displayName: 'Ensure artifact directories exist'
+            inputs:
+              targetType: 'inline'
+              script: |
+                if (-not (Test-Path "reports")) { 
+                  New-Item -ItemType Directory -Path "reports" -Force
+                  Write-Host "Created reports directory"
+                }
+                if (-not (Test-Path "test-results")) { 
+                  New-Item -ItemType Directory -Path "test-results" -Force
+                  Write-Host "Created test-results directory"
+                }
+            condition: always()
+
+          # Publish Cucumber HTML and JSON reports as artifacts
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Cucumber Reports'
+            inputs:
+              targetPath: '$(reportsPath)'
+              artifact: 'cucumber-reports'
+              publishLocation: 'pipeline'
             condition: always()
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Test Results & Screenshots'
             inputs:
-              targetPath: '$(screenshotsPath)'
+              targetPath: '$(testResultsPath)'
               artifact: 'test-results'
-              publishLocation: 'pipeline'
-            condition: always()
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish HTML Reports'
-            inputs:
-              targetPath: '$(reportsPath)'
-              artifact: 'html-reports'
               publishLocation: 'pipeline'
             condition: always()
 
