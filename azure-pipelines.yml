@@ -105,8 +105,24 @@ stages:
 
           # Generate Cucumber HTML report
           - ${{ if and(parameters.runCucumberTests, parameters.generateReport) }}:
-            - script: npm run cucumber:report
+            - task: PowerShell@2
               displayName: 'Generate Cucumber HTML Report'
+              inputs:
+                targetType: 'inline'
+                script: |
+                  Write-Host "Checking for Cucumber JSON report..."
+                  if (Test-Path "reports/cucumber-report.json") {
+                    Write-Host "✅ JSON report found, generating HTML report..."
+                    npm run cucumber:report
+                  } else {
+                    Write-Host "⚠️  JSON report not found, creating minimal report..."
+                    # Ensure reports directory exists
+                    if (-not (Test-Path "reports")) { 
+                      New-Item -ItemType Directory -Path "reports" -Force
+                    }
+                    # Run the report generator anyway - it will handle the missing file gracefully
+                    npm run cucumber:report
+                  }
               condition: always()
               continueOnError: true
 

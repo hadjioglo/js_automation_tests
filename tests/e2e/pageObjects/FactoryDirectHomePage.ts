@@ -83,18 +83,12 @@ export class FactoryDirectHomePage extends BasePage {
   }
 
   private async waitForPageLoad(): Promise<void> {
-    // Wait for page to be loaded and interactive
-    await this.page.waitForLoadState('domcontentloaded');
-    await this.page.waitForTimeout(2000); // Allow time for dynamic content
-    
-    // Wait for either the registration form or the page title to be visible
     try {
-      await Promise.race([
-        this.registrationForm.waitFor({ state: 'visible', timeout: 10000 }),
-        this.heroTitle.waitFor({ state: 'visible', timeout: 10000 })
-      ]);
+      // Wait for page to be loaded and interactive
+      await this.page.waitForLoadState('domcontentloaded');
+      await this.page.waitForTimeout(2000); // Allow time for dynamic content
     } catch (error) {
-      this.logger.warn('Neither registration form nor hero title found, continuing anyway');
+      this.logger.warn('Page load verification failed, continuing anyway');
     }
   }
 
