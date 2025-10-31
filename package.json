@@ -33,6 +33,7 @@
     "cucumber": "npx cucumber-js",
     "cucumber:smoke": "npx cucumber-js --tags @smoke",
     "cucumber:regression": "npx cucumber-js --tags @regression",
+    "cucumber:ci": "CI=true HEADLESS=true npx cucumber-js",
     "cucumber:report": "node features/support/report-generator.js",
     "report:allure": "npx allure generate reports/allure-results --clean -o reports/allure-report && npx allure open reports/allure-report",
     "report:html": "npx playwright show-report",

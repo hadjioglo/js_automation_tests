@@ -90,13 +90,35 @@ stages:
               inputs:
                 targetType: 'inline'
                 script: |
+                  # Ensure reports directory exists
+                  if (-not (Test-Path "reports")) { 
+                    New-Item -ItemType Directory -Path "reports" -Force
+                    Write-Host "Created reports directory"
+                  }
+                  
+                  # Ensure test-results directory exists
+                  if (-not (Test-Path "test-results")) { 
+                    New-Item -ItemType Directory -Path "test-results" -Force
+                    Write-Host "Created test-results directory"
+                  }
+                  
                   $testTags = "${{ parameters.testTags }}"
                   if ([string]::IsNullOrWhiteSpace($testTags)) {
                     Write-Host "Running all Cucumber tests..."
-                    npm run cucumber
+                    npm run cucumber:ci
                   } else {
                     Write-Host "Running Cucumber tests with tags: $testTags"
+                    $env:CI = "true"
+                    $env:HEADLESS = "true"
                     npx cucumber-js --tags $testTags
+                  }
+                  
+                  # Copy cucumber JSON results to test-results directory for Azure DevOps
+                  if (Test-Path "reports/cucumber-report.json") {
+                    Copy-Item "reports/cucumber-report.json" "test-results/cucumber-report.json" -Force
+                    Write-Host "✅ Copied Cucumber JSON results to test-results directory"
+                  } else {
+                    Write-Host "⚠️  No Cucumber JSON results found"
                   }
               env:
                 CI: true
@@ -114,6 +136,12 @@ stages:
                   if (Test-Path "reports/cucumber-report.json") {
                     Write-Host "✅ JSON report found, generating HTML report..."
                     npm run cucumber:report
+                    
+                    # Also copy HTML report to test-results for easier access
+                    if (Test-Path "reports/cucumber-report.html") {
+                      Copy-Item "reports/cucumber-report.html" "test-results/cucumber-report.html" -Force
+                      Write-Host "✅ Copied HTML report to test-results directory"
+                    }
                   } else {
                     Write-Host "⚠️  JSON report not found, creating minimal report..."
                     # Ensure reports directory exists
@@ -126,12 +154,26 @@ stages:
               condition: always()
               continueOnError: true
 
+          # Publish test results in JUnit format for Azure DevOps Test Results
+          - task: PublishTestResults@2
+            displayName: 'Publish Cucumber Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/*junit*.xml'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
+              mergeTestResults: true
+              failTaskOnFailedTests: false
+              testRunTitle: 'Cucumber BDD Tests'
+              publishRunAttachments: true
+            condition: always()
+
           # Ensure directories exist before publishing artifacts
           - task: PowerShell@2
-            displayName: 'Ensure artifact directories exist'
+            displayName: 'Prepare test results for publishing'
             inputs:
               targetType: 'inline'
               script: |
+                # Ensure directories exist
                 if (-not (Test-Path "reports")) { 
                   New-Item -ItemType Directory -Path "reports" -Force
                   Write-Host "Created reports directory"
@@ -139,6 +181,24 @@ stages:
                 if (-not (Test-Path "test-results")) { 
                   New-Item -ItemType Directory -Path "test-results" -Force
                   Write-Host "Created test-results directory"
+                }
+                
+                # List what files we have in reports
+                Write-Host "📁 Files in reports directory:"
+                if (Test-Path "reports") {
+                  Get-ChildItem "reports" -Force | ForEach-Object { Write-Host "  - $($_.Name)" }
+                }
+                
+                # Copy all report files to test-results for easier access
+                if (Test-Path "reports/*") {
+                  Copy-Item "reports/*" "test-results/" -Recurse -Force
+                  Write-Host "✅ Copied all reports to test-results directory"
+                }
+                
+                # List what files we have in test-results
+                Write-Host "📁 Files in test-results directory:"
+                if (Test-Path "test-results") {
+                  Get-ChildItem "test-results" -Force | ForEach-Object { Write-Host "  - $($_.Name)" }
                 }
             condition: always()
 
