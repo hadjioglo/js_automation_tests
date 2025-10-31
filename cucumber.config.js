@@ -15,9 +15,10 @@ class CustomWorld {
   }
 
   async init() {
+    const isCI = process.env.CI || process.env.HEADLESS === 'true';
     this.browser = await chromium.launch({ 
-      headless: false, // Set to true for CI/CD
-      slowMo: 300 // Slow down for better visibility
+      headless: isCI, // Use headless mode in CI/CD, headed mode locally
+      slowMo: isCI ? 0 : 300 // No slow motion in CI for faster execution
     });
     this.context = await this.browser.newContext({
       viewport: { width: 1920, height: 1080 }
