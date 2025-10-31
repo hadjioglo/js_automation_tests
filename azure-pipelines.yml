@@ -219,15 +219,6 @@ stages:
               publishLocation: 'pipeline'
             condition: always()
 
-          - task: PublishCucumberReport@1
-            inputs:
-              jsonDir: '$(System.DefaultWorkingDirectory)'
-              outputPath: '$(System.DefaultWorkingDirectory)'
-              theme: 'bootstrap'
-              reportSuiteAsScenarios: true
-              name: 'cucumber-report-name'
-              title: 'cucumber-report-title'
-
           # Email notification on failure (optional)
           - task: PowerShell@2
             displayName: 'Send Email Notification on Failure'
