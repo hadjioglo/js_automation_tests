@@ -105,6 +105,9 @@ stages:
                   $testTags = "${{ parameters.testTags }}"
                   if ([string]::IsNullOrWhiteSpace($testTags)) {
                     Write-Host "Running all Cucumber tests..."
+                    # Set environment variables for CI
+                    $env:CI = "true"
+                    $env:HEADLESS = "true"
                     npm run cucumber:ci
                   } else {
                     Write-Host "Running Cucumber tests with tags: $testTags"
