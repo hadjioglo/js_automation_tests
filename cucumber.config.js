@@ -1,38 +1,10 @@
-const { setDefaultTimeout, setWorldConstructor } = require('@cucumber/cucumber');
-const { chromium } = require('@playwright/test');
+const { setDefaultTimeout } = require('@cucumber/cucumber');
 
 // Set default timeout for steps (increased for web navigation)
 setDefaultTimeout(30 * 1000);
 
-// World constructor for sharing context between steps
-class CustomWorld {
-  constructor() {
-    this.browser = null;
-    this.context = null;
-    this.page = null;
-    this.homePage = null;
-    this.testData = {};
-  }
-
-  async init() {
-    const isCI = process.env.CI || process.env.HEADLESS === 'true';
-    this.browser = await chromium.launch({ 
-      headless: isCI, // Use headless mode in CI/CD, headed mode locally
-      slowMo: isCI ? 0 : 300 // No slow motion in CI for faster execution
-    });
-    this.context = await this.browser.newContext({
-      viewport: { width: 1920, height: 1080 }
-    });
-    this.page = await this.context.newPage();
-  }
-
-  async cleanup() {
-    if (this.context) await this.context.close();
-    if (this.browser) await this.browser.close();
-  }
-}
-
-setWorldConstructor(CustomWorld);
+// Import World from separate file to avoid duplication
+require('./features/support/world');
 
 module.exports = {
   default: {
