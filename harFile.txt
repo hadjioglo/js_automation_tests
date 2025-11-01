@@ -1,0 +1,533 @@
+{
+  "log": {
+    "version": "1.2",
+    "creator": {
+      "name": "WebInspector",
+      "version": "537.36"
+    },
+    "pages": [],
+    "entries": [
+      {
+        "_connectionId": "19750",
+        "_initiator": {
+          "type": "script",
+          "stack": {
+            "callFrames": [
+              {
+                "functionName": "window.tildaForm.send",
+                "scriptId": "65",
+                "url": "https://static.tildacdn.ink/js/tilda-forms-1.0.min.js",
+                "lineNumber": 1,
+                "columnNumber": 27896
+              },
+              {
+                "functionName": "t_forms__initBtnClick",
+                "scriptId": "65",
+                "url": "https://static.tildacdn.ink/js/tilda-forms-1.0.min.js",
+                "lineNumber": 0,
+                "columnNumber": 24347
+              }
+            ]
+          }
+        },
+        "_priority": "High",
+        "_resourceType": "xhr",
+        "cache": {},
+        "connection": "443",
+        "request": {
+          "method": "POST",
+          "url": "https://forms.tildaapi.one/procces/",
+          "httpVersion": "http/2.0",
+          "headers": [
+            {
+              "name": ":authority",
+              "value": "forms.tildaapi.one"
+            },
+            {
+              "name": ":method",
+              "value": "POST"
+            },
+            {
+              "name": ":path",
+              "value": "/procces/"
+            },
+            {
+              "name": ":scheme",
+              "value": "https"
+            },
+            {
+              "name": "accept",
+              "value": "application/json, text/javascript, */*; q=0.01"
+            },
+            {
+              "name": "accept-encoding",
+              "value": "gzip, deflate, br, zstd"
+            },
+            {
+              "name": "accept-language",
+              "value": "en-US,en;q=0.9,ru;q=0.8"
+            },
+            {
+              "name": "cache-control",
+              "value": "no-cache"
+            },
+            {
+              "name": "content-length",
+              "value": "816"
+            },
+            {
+              "name": "content-type",
+              "value": "application/x-www-form-urlencoded; charset=UTF-8"
+            },
+            {
+              "name": "origin",
+              "value": "https://factory-direct.tilda.ws"
+            },
+            {
+              "name": "pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "priority",
+              "value": "u=1, i"
+            },
+            {
+              "name": "referer",
+              "value": "https://factory-direct.tilda.ws/"
+            },
+            {
+              "name": "sec-ch-ua",
+              "value": "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\""
+            },
+            {
+              "name": "sec-ch-ua-mobile",
+              "value": "?0"
+            },
+            {
+              "name": "sec-ch-ua-platform",
+              "value": "\"Windows\""
+            },
+            {
+              "name": "sec-fetch-dest",
+              "value": "empty"
+            },
+            {
+              "name": "sec-fetch-mode",
+              "value": "cors"
+            },
+            {
+              "name": "sec-fetch-site",
+              "value": "cross-site"
+            },
+            {
+              "name": "user-agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+            }
+          ],
+          "queryString": [],
+          "cookies": [],
+          "headersSize": -1,
+          "bodySize": 816,
+          "postData": {
+            "mimeType": "application/x-www-form-urlencoded; charset=UTF-8",
+            "text": "formservices%5B%5D=f7bc604652b0ef15e85963ea4fc3f5f6&Email=test%40mail.com&Name=test&Phone=699595955&Account+type=Factory&form-spec-comments=&tildaspec-cookie=&tildaspec-referer=https%3A%2F%2Ffactory-direct.tilda.ws%2F%23rec1389242973&tildaspec-formid=form1389242973&tildaspec-formskey=e6cfbf70985ba815d7b4d333a6284491&tildaspec-version-lib=02.001&tildaspec-pageid=83603536&tildaspec-projectid=6284491&tildaspec-lang=EN&tildaspec-fp=63547c646d387c6863387c6c656e2d55532c656e2c72757c7057696e33327c76476f6f676c6520496e632e7c614d6f7a696c6c617c6e4e657473636170657c706c696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d7669657765727c7072317c773139323068313038307c634432347c744f2d3132307c6d54307c",
+            "params": [
+              {
+                "name": "formservices%5B%5D",
+                "value": "f7bc604652b0ef15e85963ea4fc3f5f6"
+              },
+              {
+                "name": "Email",
+                "value": "test%40mail.com"
+              },
+              {
+                "name": "Name",
+                "value": "test"
+              },
+              {
+                "name": "Phone",
+                "value": "699595955"
+              },
+              {
+                "name": "Account+type",
+                "value": "Factory"
+              },
+              {
+                "name": "form-spec-comments",
+                "value": ""
+              },
+              {
+                "name": "tildaspec-cookie",
+                "value": ""
+              },
+              {
+                "name": "tildaspec-referer",
+                "value": "https%3A%2F%2Ffactory-direct.tilda.ws%2F%23rec1389242973"
+              },
+              {
+                "name": "tildaspec-formid",
+                "value": "form1389242973"
+              },
+              {
+                "name": "tildaspec-formskey",
+                "value": "e6cfbf70985ba815d7b4d333a6284491"
+              },
+              {
+                "name": "tildaspec-version-lib",
+                "value": "02.001"
+              },
+              {
+                "name": "tildaspec-pageid",
+                "value": "83603536"
+              },
+              {
+                "name": "tildaspec-projectid",
+                "value": "6284491"
+              },
+              {
+                "name": "tildaspec-lang",
+                "value": "EN"
+              },
+              {
+                "name": "tildaspec-fp",
+                "value": "63547c646d387c6863387c6c656e2d55532c656e2c72757c7057696e33327c76476f6f676c6520496e632e7c614d6f7a696c6c617c6e4e657473636170657c706c696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d7669657765727c7072317c773139323068313038307c634432347c744f2d3132307c6d54307c"
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "httpVersion": "http/2.0",
+          "headers": [
+            {
+              "name": "access-control-allow-origin",
+              "value": "*"
+            },
+            {
+              "name": "content-encoding",
+              "value": "gzip"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json;charset=utf-8"
+            },
+            {
+              "name": "date",
+              "value": "Sat, 01 Nov 2025 06:30:55 GMT"
+            },
+            {
+              "name": "x-tilda-imprint",
+              "value": "dee4faee-6699-4f8b-8fd8-edca75efdb77"
+            },
+            {
+              "name": "x-tilda-server",
+              "value": "15"
+            }
+          ],
+          "cookies": [],
+          "content": {
+            "size": 49,
+            "mimeType": "application/json"
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1,
+          "_transferSize": 234,
+          "_error": null,
+          "_fetchedViaServiceWorker": false
+        },
+        "serverIPAddress": "5.181.161.245",
+        "startedDateTime": "2025-11-01T06:30:56.040Z",
+        "time": 691.9590000000061,
+        "timings": {
+          "blocked": 1.5240000000417786,
+          "dns": 63.178999999999995,
+          "ssl": 367.56100000000004,
+          "connect": 507.871,
+          "send": 0.4300000000000068,
+          "wait": 118.40499999998872,
+          "receive": 0.5499999999756255,
+          "_blocked_queueing": 0.8390000000417785,
+          "_workerStart": -1,
+          "_workerReady": -1,
+          "_workerFetchStart": -1,
+          "_workerRespondWithSettled": -1
+        }
+      },
+      {
+        "_connectionId": "19764",
+        "_initiator": {
+          "type": "script",
+          "stack": {
+            "callFrames": [
+              {
+                "functionName": "p",
+                "scriptId": "74",
+                "url": "https://static.tildacdn.ink/js/tilda-stat-1.0.min.js",
+                "lineNumber": 0,
+                "columnNumber": 6449
+              },
+              {
+                "functionName": "window.tildastat",
+                "scriptId": "74",
+                "url": "https://static.tildacdn.ink/js/tilda-stat-1.0.min.js",
+                "lineNumber": 0,
+                "columnNumber": 7158
+              },
+              {
+                "functionName": "Tilda.sendEventToStatistics",
+                "scriptId": "66",
+                "url": "https://static.tildacdn.ink/js/tilda-events-1.0.min.js",
+                "lineNumber": 0,
+                "columnNumber": 12348
+              },
+              {
+                "functionName": "secondFormTypeXhr.onreadystatechange",
+                "scriptId": "65",
+                "url": "https://static.tildacdn.ink/js/tilda-forms-1.0.min.js",
+                "lineNumber": 1,
+                "columnNumber": 24685
+              }
+            ],
+            "parent": {
+              "description": "XMLHttpRequest.send",
+              "callFrames": [
+                {
+                  "functionName": "window.tildaForm.send",
+                  "scriptId": "65",
+                  "url": "https://static.tildacdn.ink/js/tilda-forms-1.0.min.js",
+                  "lineNumber": 1,
+                  "columnNumber": 27896
+                },
+                {
+                  "functionName": "t_forms__initBtnClick",
+                  "scriptId": "65",
+                  "url": "https://static.tildacdn.ink/js/tilda-forms-1.0.min.js",
+                  "lineNumber": 0,
+                  "columnNumber": 24347
+                }
+              ]
+            }
+          }
+        },
+        "_priority": "High",
+        "_resourceType": "xhr",
+        "cache": {},
+        "connection": "443",
+        "request": {
+          "method": "POST",
+          "url": "https://stat.tildaapi.one/event/",
+          "httpVersion": "http/2.0",
+          "headers": [
+            {
+              "name": ":authority",
+              "value": "stat.tildaapi.one"
+            },
+            {
+              "name": ":method",
+              "value": "POST"
+            },
+            {
+              "name": ":path",
+              "value": "/event/"
+            },
+            {
+              "name": ":scheme",
+              "value": "https"
+            },
+            {
+              "name": "accept",
+              "value": "*/*"
+            },
+            {
+              "name": "accept-encoding",
+              "value": "gzip, deflate, br, zstd"
+            },
+            {
+              "name": "accept-language",
+              "value": "en-US,en;q=0.9,ru;q=0.8"
+            },
+            {
+              "name": "cache-control",
+              "value": "no-cache"
+            },
+            {
+              "name": "content-length",
+              "value": "874"
+            },
+            {
+              "name": "content-type",
+              "value": "application/x-www-form-urlencoded; charset=UTF-8"
+            },
+            {
+              "name": "origin",
+              "value": "https://factory-direct.tilda.ws"
+            },
+            {
+              "name": "pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "priority",
+              "value": "u=1, i"
+            },
+            {
+              "name": "referer",
+              "value": "https://factory-direct.tilda.ws/"
+            },
+            {
+              "name": "sec-ch-ua",
+              "value": "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\""
+            },
+            {
+              "name": "sec-ch-ua-mobile",
+              "value": "?0"
+            },
+            {
+              "name": "sec-ch-ua-platform",
+              "value": "\"Windows\""
+            },
+            {
+              "name": "sec-fetch-dest",
+              "value": "empty"
+            },
+            {
+              "name": "sec-fetch-mode",
+              "value": "cors"
+            },
+            {
+              "name": "sec-fetch-site",
+              "value": "cross-site"
+            },
+            {
+              "name": "user-agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+            }
+          ],
+          "queryString": [],
+          "cookies": [],
+          "headersSize": -1,
+          "bodySize": 874,
+          "postData": {
+            "mimeType": "application/x-www-form-urlencoded; charset=UTF-8",
+            "text": "page=factory-direct.tilda.ws%2Ftilda%2Fform1389242973%2Fsubmitted%2F&referrer=factory-direct.tilda.ws%2F&userid=simple&sessionid=simple&user_agent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F140.0.0.0%20Safari%2F537.36&user_language=en-US&projectid=6284491&pageid=83603536&pagealias=main&formskey=e6cfbf70985ba815d7b4d333a6284491&ismobile=false&tildastatcode=72ec104d42e08e9ca0ccd22292ef93b2&fingerprint=63547c646d387c6863387c6c656e2d55532c656e2c72757c7057696e33327c76476f6f676c6520496e632e7c614d6f7a696c6c617c6e4e657473636170657c706c696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d7669657765727c7072317c773139323068313038307c634432347c744f2d3132307c6d54307c&tildautm=",
+            "params": [
+              {
+                "name": "page",
+                "value": "factory-direct.tilda.ws%2Ftilda%2Fform1389242973%2Fsubmitted%2F"
+              },
+              {
+                "name": "referrer",
+                "value": "factory-direct.tilda.ws%2F"
+              },
+              {
+                "name": "userid",
+                "value": "simple"
+              },
+              {
+                "name": "sessionid",
+                "value": "simple"
+              },
+              {
+                "name": "user_agent",
+                "value": "Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F140.0.0.0%20Safari%2F537.36"
+              },
+              {
+                "name": "user_language",
+                "value": "en-US"
+              },
+              {
+                "name": "projectid",
+                "value": "6284491"
+              },
+              {
+                "name": "pageid",
+                "value": "83603536"
+              },
+              {
+                "name": "pagealias",
+                "value": "main"
+              },
+              {
+                "name": "formskey",
+                "value": "e6cfbf70985ba815d7b4d333a6284491"
+              },
+              {
+                "name": "ismobile",
+                "value": "false"
+              },
+              {
+                "name": "tildastatcode",
+                "value": "72ec104d42e08e9ca0ccd22292ef93b2"
+              },
+              {
+                "name": "fingerprint",
+                "value": "63547c646d387c6863387c6c656e2d55532c656e2c72757c7057696e33327c76476f6f676c6520496e632e7c614d6f7a696c6c617c6e4e657473636170657c706c696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d766965776572696e7465726e616c2d7064662d7669657765727c7072317c773139323068313038307c634432347c744f2d3132307c6d54307c"
+              },
+              {
+                "name": "tildautm",
+                "value": ""
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "httpVersion": "http/2.0",
+          "headers": [
+            {
+              "name": "access-control-allow-origin",
+              "value": "https://factory-direct.tilda.ws"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json;charset=utf-8"
+            },
+            {
+              "name": "date",
+              "value": "Sat, 01 Nov 2025 06:30:55 GMT"
+            },
+            {
+              "name": "x-tilda-imprint",
+              "value": "3ad23409-23ab-43cf-a9d6-1a14d8d813d8"
+            },
+            {
+              "name": "x-tilda-server",
+              "value": "21"
+            }
+          ],
+          "cookies": [],
+          "content": {
+            "size": 16,
+            "mimeType": "application/json"
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1,
+          "_transferSize": 205,
+          "_error": null,
+          "_fetchedViaServiceWorker": false
+        },
+        "serverIPAddress": "5.181.161.226",
+        "startedDateTime": "2025-11-01T06:30:56.672Z",
+        "time": 336.32500000008736,
+        "timings": {
+          "blocked": 1.097000000089749,
+          "dns": 19.807,
+          "ssl": 103.05300000000001,
+          "connect": 173.806,
+          "send": 0.4269999999999925,
+          "wait": 140.79999999995403,
+          "receive": 0.3880000000435757,
+          "_blocked_queueing": 0.8200000000897489,
+          "_workerStart": -1,
+          "_workerReady": -1,
+          "_workerFetchStart": -1,
+          "_workerRespondWithSettled": -1
+        }
+      }
+    ]
+  }
+}
