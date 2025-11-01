@@ -3,9 +3,6 @@ const { setDefaultTimeout } = require('@cucumber/cucumber');
 // Set default timeout for steps (increased for web navigation)
 setDefaultTimeout(30 * 1000);
 
-// Import World from separate file to avoid duplication
-require('./features/support/world');
-
 module.exports = {
   default: {
     requireModule: ['ts-node/register'],
