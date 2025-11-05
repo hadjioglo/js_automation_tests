@@ -19,7 +19,8 @@ export class FormSubmissionClient extends BaseApiClient {
   constructor(
     request: APIRequestContext,
     baseUrl: string = 'https://forms.tildaapi.one',
-    formMetadata?: Partial<FormMetadata>
+    formMetadata?: Partial<FormMetadata>,
+    timeout: number = 30000
   ) {
     const defaultHeaders = {
       'accept': 'application/json, text/javascript, */*; q=0.01',
@@ -39,7 +40,7 @@ export class FormSubmissionClient extends BaseApiClient {
       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
     };
 
-    super(request, baseUrl, defaultHeaders, 30000);
+    super(request, baseUrl, defaultHeaders, timeout);
 
     // Default form metadata based on real Tilda form
     this.formMetadata = {

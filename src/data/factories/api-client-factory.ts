@@ -12,8 +12,8 @@ export class ApiClientFactory {
     name: 'default',
     baseUrl: 'https://forms.tildaapi.one',
     formSubmissionUrl: 'https://forms.tildaapi.one/procces/',
-    timeout: 30000,
-    retries: 2,
+    timeout: 60000,
+    retries: 3,
     headers: {
       'accept': 'application/json, text/javascript, */*; q=0.01',
       'accept-encoding': 'gzip, deflate, br, zstd',
@@ -83,7 +83,7 @@ export class ApiClientFactory {
       referer: config.metadata.referer
     };
 
-    return new FormSubmissionClient(request, config.baseUrl, formMetadata);
+    return new FormSubmissionClient(request, config.baseUrl, formMetadata, config.timeout);
   }
 
   /**
