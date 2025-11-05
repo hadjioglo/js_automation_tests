@@ -91,7 +91,8 @@ export abstract class BaseApiClient {
     const timeout = options.timeout || this.defaultTimeout;
     const retries = options.retries || 0;
 
-    this.logger.info(`${method} ${url} - Headers: ${JSON.stringify(this.sanitizeHeaders(headers))} - Data: ${JSON.stringify(data)}`);
+    const preparedData = this.prepareRequestData(data);
+    this.logger.info(`${method} ${url} - Headers: ${JSON.stringify(this.sanitizeHeaders(headers))} - Prepared Data: ${preparedData}`);
 
     let lastError: Error | null = null;
 
@@ -102,7 +103,7 @@ export abstract class BaseApiClient {
         const response = await this.request.fetch(url, {
           method,
           headers,
-          data: this.prepareRequestData(data),
+          data: preparedData,
           timeout,
         });
 
@@ -129,8 +130,10 @@ export abstract class BaseApiClient {
           break;
         }
         
-        // Wait before retry (exponential backoff)
-        await this.delay(Math.pow(2, attempt) * 1000);
+        // Wait before retry (exponential backoff with longer delays)
+        const delay = Math.min(Math.pow(2, attempt) * 2000, 30000); // Max 30 seconds
+        this.logger.info(`Retrying in ${delay}ms...`);
+        await this.delay(delay);
       }
     }
 
@@ -158,13 +161,24 @@ export abstract class BaseApiClient {
     
     if (contentType?.includes('application/x-www-form-urlencoded')) {
       if (data instanceof URLSearchParams) {
-        return data;
+        return data.toString(); // Convert URLSearchParams to string
       }
+      
       const params = new URLSearchParams();
-      Object.entries(data as Record<string, string>).forEach(([key, value]) => {
-        params.append(key, value);
+      const dataObj = data as Record<string, any>;
+      
+      Object.entries(dataObj).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          // Convert all values to strings and handle arrays properly
+          const stringValue = Array.isArray(value) ? value.join(',') : String(value);
+          params.append(key, stringValue);
+        }
       });
-      return params;
+      
+      // Log the prepared data for debugging and return as string
+      const formDataString = params.toString();
+      this.logger.debug(`Prepared form data: ${formDataString}`);
+      return formDataString;
     }
 
     return typeof data === 'string' ? data : JSON.stringify(data);

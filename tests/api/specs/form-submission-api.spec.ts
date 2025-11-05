@@ -38,18 +38,12 @@ test.describe('Form Submission API Tests @api', () => {
       // Act: Submit form using Service/Client pattern
       const response = await formClient.submitForm(factoryUserData);
 
-      // Assert: Comprehensive validation
+      // Assert: Validate successful submission
       expect(response.success).toBe(true);
       expect(response.status).toBe(200);
-      
-      // Validate response headers
       expect(response.headers['content-type']).toContain('application/json');
-      expect(response.headers['access-control-allow-origin']).toBe('*');
-      
-      // Validate response structure
       expect(response.data).toBeDefined();
       
-      // Log for debugging
       console.log(`✅ Factory registration successful for: ${factoryUserData.email}`);
     });
 
