@@ -5,7 +5,7 @@ import {
   FormSubmissionClient,
   UserFormData,
   FormSubmissionResponse 
-} from '../../src';
+} from '../../../src';
 
 /**
  * Form Submission API Tests
